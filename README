@@ -1,0 +1,61 @@
+/*************************
+ * Project: Anomaly Detection using Video Compression tech
+ * Author: Yi-Chao Chen @ UT Austin
+ *************************/
+
+
+/*************************
+ * Dataset
+ *************************/
+
+1. 4sq/Airport
+    4SQ_VENUE_DETAILS_Austin.gz
+    VENUE_DATA - venues -| stat
+                         | tags
+                         | ts
+                         | tips
+                         | checkins - users - ['last', 'gender', 'userid', 'ts', 'home', 'first']
+                         | mayor
+
+2. 4sq/Airport_info/4SQ_AIRPORT_INFO
+    venues - ['grp_type', 'city', 'addr', 'checkinsCount', 'cate_name', 'ts', 'hereNow', 'state', 'contact', 'cate_id', 'lat', 'grp_name', 'lng', 'usersCount', 'id', 'name']
+
+    or 
+
+    venues - ['grp_type', 'name', 'addr', 'checkinsCount', 'cate_name', 'ts', 'hereNow', 'state', 'contact', 'cate_id', 'lat', 'grp_name', 'lng', 'usersCount', 'id', 'name']
+
+
+/*************************
+ * Subtasks
+ *************************/
+
+1. subtask_process_4sq
+    - generate_Human_TM.py
+        - Goal: read 4sq Airport checkins and produce human traffic matrix
+        - Variables:
+            - user_hist: userid - ts - ['last', 'gender', 'userid', 'ts', 'home', 'first', 'lat', 'lng', 'venue', 'venue_id']
+        - Input: 
+            - period: generate a traffic matrix with "period" days of checkins data.
+        - Output:
+            - ../processed_data/subtask_process_4sq/airports_sorted.txt
+                - The order of airports in TM
+                - Format: <airport name> <lat> <lng>
+            - ../processed_data/subtask_process_4sq/TM_period<period>_<index>.txt
+                - The Human Traffic Matrix using <period> days of data
+        - Batch Run:
+            - batch_generate_Human_TM.sh
+
+    - plot_TM.mother.plot
+        - Goal: given the Human TM generated above, plot the heat map using Gnuplot
+        - Output:
+            - ../figures/subtask_process_4sq/TM/TM_period<period>_<index>.eps
+        - Batch Run:
+            - batch_plot_TM.pl
+
+
+
+
+
+
+
+

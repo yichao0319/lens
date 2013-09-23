@@ -1,0 +1,28 @@
+#####
+## input
+#####
+data
+
+#####
+## output
+#####
+processed_data
+figures
+
+
+#####
+## tmp output
+#####
+subtask_process_4sq/plot_TM.plot
+
+#####
+## compile output
+#####
+*.pyc
+*/*.pyc
+
+
+#####
+### to delete
+#####
+*/delete
