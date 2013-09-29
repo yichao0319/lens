@@ -1,3 +1,18 @@
+######################################################
+## Author: Yi-Chao Chen
+## 2013.09.20 @ UT Austin
+##
+## - Input:
+##   1. period: 
+##      The period of time used to generate a snapshot of Human Traffic Matrix (in days).
+##   2. City:
+##      The city used to generate Human TM.
+##
+## - e.g.
+##   python generate_Human_TM.py 1 Austin
+##
+######################################################
+
 import sys
 import os
 from numpy import array
@@ -30,6 +45,7 @@ DEBUG4 = True        ## Should not happen
 
 ################
 ## process_data
+##   output user_hist
 def process_data():
     if len(DATA) == 0:
         return
@@ -39,6 +55,8 @@ def process_data():
     
     this_user = set([])
 
+    #####
+    ## get venue data: venues, checkins
     if city == 'Airport' or city == 'SXSW':
         _DATA_ = DATA['VENUE_DATA']
     else:
@@ -48,15 +66,16 @@ def process_data():
 
         v_data = _DATA_[v]
         
-        if city == 'Airport':
-            v_info = DATA_AIR[v]
-        else:
-            v_info = DATA['VENUE_INFO'][v]
+        #####
+        ## get venue data: lat, lng, name, id
+        v_info = DATA_INFO[v]
 
         if DEBUG3:
             #print v_data
             print "  " + str(v_data.keys())
 
+        #####
+        ## get "userid" in "checkins"
         for u in v_data['checkins']:
             c_data = v_data['checkins'][u]
             
@@ -69,6 +88,8 @@ def process_data():
             if DEBUG3:
                 print "  " + str(v_info.keys())
             
+            #####
+            ## now we have: <userid, lat, lng, ts, venue, venue_id> in c_data
             c_data['lat'] = v_info['lat']
             c_data['lng'] = v_info['lng']
         
@@ -80,7 +101,7 @@ def process_data():
                     print "XXX: the venue does not have a name!!!!"
                     sys.exit(1)
 
-                c_data['venue'] = 'airport'
+                c_data['venue'] = city
                 c_data['venue_id'] = 0
 
             if not user_hist.has_key(c_data['userid']):
@@ -101,7 +122,7 @@ def process_data():
 ## generate_TM
 def generate_TM():
     TM = dict()
-    # Airports = dict()
+    # Venues = dict()
     for uid in user_hist:
         if len(user_hist[uid]) < 2:
             continue
@@ -123,23 +144,23 @@ def generate_TM():
                 else:
                     TM[src][dst] += 1
             
-            # Airports
-            # if not Airports.has_key(src):
-            #     Airports[src] = sort_hist[i][1]['lat'] + 90 + sort_hist[i][1]['lng'] + 180
-            # if not Airports.has_key(dst):
-            #     Airports[dst] = sort_hist[i+1][1]['lat'] + 90 + sort_hist[i+1][1]['lng'] + 180
+            # Venues
+            # if not Venues.has_key(src):
+            #     Venues[src] = sort_hist[i][1]['lat'] + 90 + sort_hist[i][1]['lng'] + 180
+            # if not Venues.has_key(dst):
+            #     Venues[dst] = sort_hist[i+1][1]['lat'] + 90 + sort_hist[i+1][1]['lng'] + 180
 
-    # sort_airports = sorted(Airports.items(), key=itemgetter(1))
-    f_TM = open(OUTPUT_DIR + 'TM_period' + str(period) + '_' + str(period_cnt) + '.txt', 'w')
-    al = len(sort_airports)
+    # sort_venues = sorted(Venues.items(), key=itemgetter(1))
+    f_TM = open(OUTPUT_DIR + 'TM_' + city + '_period' + str(period) + '_' + str(period_cnt) + '.txt', 'w')
+    al = len(sort_venues)
     for i in range(al):
-        src = sort_airports[i][0]
+        src = sort_venues[i][0]
         if not TM.has_key(src):
             for j in range(al):
                 f_TM.write("0, ")
         else:
             for j in range(al):
-                dst = sort_airports[j][0]
+                dst = sort_venues[j][0]
                 if not TM[src].has_key(dst):
                     f_TM.write("0, ")
                 else:
@@ -154,19 +175,30 @@ def generate_TM():
 ################
 ## map_lat_lng_to_line
 def map_lat_lng_to_line(lat, lng):
-    # return lat + 90 + lng + 180
-    return (lat + 90) + (lng + 180) * 400
+    return lat + 90 + lng + 180
+    # return (lat + 90) + (lng + 180) * 400
 ## map_lat_lng_to_line
+################
+
+################################################################################
+
+################
+## Constant
 ################
 
 
 ################
 ## Variables
 ################
-OUTPUT_DIR = '../processed_data/subtask_process_4sq/'
+INPUT_VENUE_INFO_DIR = '../data/4sq/city_info/'
+INPUT_VENUE_DATA_DIR = ''
+OUTPUT_DIR = '../processed_data/subtask_process_4sq/TM/'
+FILE_VENUE_DATA = ''
+
 total_user = set([])
 user_hist = dict()
 period = 1 
+city = "Airport"
 
 
 ################
@@ -176,15 +208,24 @@ if DEBUG2:
     print sys.argv
 if len(sys.argv) == 2:
     period = int(sys.argv[1])
+    city = "Airport"
+elif len(sys.argv) == 3:
+    period = int(sys.argv[1])
+    city = sys.argv[2]
 else:
     print 'wrong number of input: ' + str(len(sys.argv))
     sys.exit(1)
+
+INPUT_VENUE_DATA_DIR = '../data/4sq/' + city + '/'
+if city == 'Airport':
+    FILE_VENUE_DATA = '/4SQ_VENUE_DETAILS_' + city + ".gz"
+else:
+    FILE_VENUE_DATA = '/4SQ_VENUE_TRENDS_' + city + ".gz"
 
 
 ################
 ## MAIN starts here
 ################
-city = "Airport"
 if DEBUG2:
     print "city: " + city
     print "-------------"
@@ -192,54 +233,62 @@ if DEBUG2:
 force_utf8_hack()
 
 #################
-## read Airport Info
+## read City Info
 #################
-FILE_VENUE_DATA = '/4SQ_VENUE_DETAILS_' + city + ".gz"
-DATA_AIR = load_data('../data/4sq/Airport_info/4SQ_AIRPORT_INFO')
-Airports = []
-for i in DATA_AIR:
-    Airports.append( (DATA_AIR[i]['id'], map_lat_lng_to_line(float(DATA_AIR[i]['lat']), float(DATA_AIR[i]['lng']) ), i) )
-sort_airports = sorted(Airports, key=itemgetter(1))
+DATA_INFO = load_data(INPUT_VENUE_INFO_DIR + '4SQ_' + city + '_INFO')
 
-## write sorted airports to the file
-f_airport = open(OUTPUT_DIR + 'airports_sorted.txt', 'w')
-al = len(sort_airports)
+## Venues: (<id> <location - used for sorting> <venue>)
+Venues = []
+for v in DATA_INFO:
+    Venues.append( (DATA_INFO[v]['id'], map_lat_lng_to_line(float(DATA_INFO[v]['lat']), float(DATA_INFO[v]['lng']) ), v) )
+
+## sorted by the location of the venues
+sort_venues = sorted(Venues, key=itemgetter(1))
+
+## write sorted venues to the file
+fh = open(OUTPUT_DIR + city + '_sorted.txt', 'w')
+al = len(sort_venues)
 for i in range(al):
-    v = sort_airports[i][2]
-    if not ('city' in DATA_AIR[v].keys()):
-        if DEBUG1:
-            print DATA_AIR[v].keys()
-            print "  " + str(DATA_AIR[v]['name'])
+    v = sort_venues[i][2]
+    if not ('city' in DATA_INFO[v].keys()):
+        if DEBUG0:
+            print DATA_INFO[v].keys()
+            print "  " + str(DATA_INFO[v]['name'])
 
-        str_tmp = str(DATA_AIR[v]['name']) + ', ' + str(DATA_AIR[v]['lat']) + ", " + str(DATA_AIR[v]['lng'])
+        str_tmp = str(DATA_INFO[v]['name']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng'])
     else:
-        str_tmp = str(DATA_AIR[v]['city']) + ', ' + str(DATA_AIR[v]['lat']) + ", " + str(DATA_AIR[v]['lng'])
+        str_tmp = str(DATA_INFO[v]['city']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng'])
     # print str_tmp
-    f_airport.write(str_tmp + '\n')
-f_airport.close()
+    fh.write(str_tmp + '\n')
+fh.close()
 
 if DEBUG2:
-    print "done load airport info: " + str(len(DATA_AIR))
+    print "done load venues info: " + str(len(DATA_INFO))
 
 
 #################
 # go over all folders and read files
 #################
-PATH = '../data/4sq/Airport/'
+if DEBUG2:
+    print "go over all folders and read files\n"
+
+## Each folder stores different period of data.
+## To get snapshots of TM, we need to parse the folder name
 pre_date = -1
 period_timedelta = datetime.timedelta(period)
 period_cnt = 0
-for folder in sort_listdir(PATH):
+for folder in sort_listdir(INPUT_VENUE_DATA_DIR):
     if DEBUG2:
         print
         print folder
-        # print os.listdir(PATH + folder)
+        # print os.listdir(INPUT_VENUE_DATA_DIR + folder)
 
-    m = re.match('(\d+)-(\d+)-(\d+).*(\d+):(\d+):(\d+\.\d+)_Airport', folder)
+    m = re.match('(\d+)-(\d+)-(\d+).*(\d+):(\d+):(\d+\.\d+)_' + city, folder)
     if DEBUG0:
-        print str(m.group(1)) + "|||" + str(m.group(2)) + "|||" + str(m.group(3)) + "|||" + str(m.group(4)) + "|||" + str(m.group(5)) + "|||" + str(m.group(6))
+        print "    " + str(m.group(1)) + "|||" + str(m.group(2)) + "|||" + str(m.group(3)) + "|||" + str(m.group(4)) + "|||" + str(m.group(5)) + "|||" + str(m.group(6))
 
     if pre_date == -1:
+        ## the first snapshot
         pre_date = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
         if DEBUG0:
             print pre_date
@@ -248,7 +297,10 @@ for folder in sort_listdir(PATH):
         diff_time = new_date - pre_date
         if DEBUG0:
             print diff_time
+
         if diff_time >= period_timedelta:
+            ## We have got all data for the previous snapshot in "user_hist".
+            ## Generate and output TM of current snapshot.
             if DEBUG1:
                 print ">>>>>>>> new period"
 
@@ -257,7 +309,8 @@ for folder in sort_listdir(PATH):
             user_hist = dict()
             pre_date = new_date
 
-    DATA = load_data(PATH + folder + FILE_VENUE_DATA)
+    ## read the data of the current folder
+    DATA = load_data(INPUT_VENUE_DATA_DIR + folder + FILE_VENUE_DATA)
     process_data()
 
 generate_TM()

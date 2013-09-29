@@ -13,7 +13,8 @@ figures
 #####
 ## tmp output
 #####
-subtask_process_4sq/plot_TM.plot
+tmp*
+*/tmp*
 
 #####
 ## compile output

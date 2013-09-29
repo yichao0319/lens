@@ -17,4 +17,4 @@ set xrange [0:500]
 set yrange [0:500]
 
 #set view map
-plot '../processed_data/subtask_process_4sq/' . filename . '.txt' matrix w image notitle
+plot '../processed_data/subtask_process_4sq/TM/' . filename . '.txt' matrix w image notitle
