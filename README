@@ -53,6 +53,12 @@
         CIF, YCbCr 4:2:0 planar 8 bit, 352*288, 90 frames
     - bus_cif.yuv
         CIF, YCbCr 4:2:0 planar 8 bit, 352*288, 150 frames
+    - foreman_cif.yuv
+        CIF, YCbCr 4:2:0 planar 8 bit, 352*288, 300 frames
+    - coastguard_cif.yuv
+        CIF, YCbCr 4:2:0 planar 8 bit, 352*288, 300 frames
+    - highway_cif.yuv
+        CIF, YCbCr 4:2:0 planar 8 bit, 352*288, 2000 frames
 
     The video files are large, so I put them in valleyview local disk: 
     /var/local/yichao/anomaly_compression/data/video/
@@ -113,7 +119,15 @@
     To compare PSNR of videos compressed using MPEG and PCA.
 
     - PCA_psnr.m
-        - Goal: calculate the PSNR given a rank and video
+        - Goal: calculate the PSNR given a rank and video.
+            step 1: given a video with [frame, width, height, YUV] pixels.
+            step 2: convert to a 2D matrix: [frame, width * height * YUV]
+            step 3: fragment the 2D matrix into small ones:
+                    fragment i = [frame, x_i:y_i]
+            step 4: apply PCA to each fragment with a given rank.
+                    the rank decides the compression ratio and quality
+            step 5: reconstruct the appriximated matrix
+            step 6: calculate PSNR
 
         - Input:
             1. num_PC: num of PCs to use (i.e. rank)
@@ -128,6 +142,26 @@
 
         - Batch Run:
             1. batch_PCA_psnr.m
+
+    - PCA_psnr_by_frame.m
+        - Goal: calculate the PSNR given a rank and video
+            step 1: given a video with [frame, width, height, YUV] pixels.
+            step 2: apply DCT to each frame.
+                    frame [i, Y | U | V] = [width, height]
+            step 3: apply PCA to the DCT output with a given rank.
+            step 4: reconstruct the appriximated matrix
+            step 5: apply inverted DCT the the appriximated matrix
+            step 6: calculate PSNR
+        
+    - yuv_psnr.m
+        - Goal: calculate the PSNR of two videos
+
+        - Input: 
+            1. video_name1: file name and path of the 1st video.
+            2. video_name2: file name and path of the 2nd video.
+            3. frames: number of frames to analyze
+            4. width: the width of the video
+            5. height: the height of the video
 
 
 /*************************
@@ -146,7 +180,9 @@
     - calculate_psnr.m
     - The codes copied from somewhere online to calculate PSNR of a video
 
-
+4. Matlab Lib: DCT/IDCT
+    - mirt_dctn
+    - http://www.mathworks.com/matlabcentral/fileexchange/24050-multidimensional-discrete-cosine-transform-dct
 
 
 

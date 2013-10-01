@@ -16,7 +16,7 @@
 %
 %% --------------------
 
-function yuv_psnr(video_name1, video_name2, frames, width, height)
+function [psnr] = yuv_psnr(video_name1, video_name2, frames, width, height)
     addpath('../utils/YUV2Image');
     addpath('../utils');
 
@@ -26,6 +26,7 @@ function yuv_psnr(video_name1, video_name2, frames, width, height)
     DEBUG0 = 0;     %% don't print 
     DEBUG1 = 1;     %% print 
     DEBUG2 = 0;     %% program flow
+    DEBUG3 = 0;     %% output
 
 
     %% --------------------
@@ -53,4 +54,7 @@ function yuv_psnr(video_name1, video_name2, frames, width, height)
     end
 
     psnr = calculate_psnr(mov1, mov2, frames);
-    fprintf('PSNR=%f\n', psnr);
+
+    if DEBUG3 == 1
+        fprintf('PSNR=%f\n', psnr);
+    end

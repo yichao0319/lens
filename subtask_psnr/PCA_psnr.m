@@ -20,6 +20,7 @@
 
 function PCA_psnr(num_PC, video_name, frames, width, height)
     addpath('../utils/YUV2Image');
+    addpath('../utils/mirt_dctn');
     addpath('../utils');
 
     %% --------------------
