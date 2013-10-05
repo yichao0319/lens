@@ -6,6 +6,7 @@
 % 
 % @input (optional) num_PC: num of PCs to use (i.e. rank)
 % @input (optional) dct_thresh: when the value after DCT <= dct_thresh, make it 0
+% @input (optional) group_size: group x frames to do PCA
 % @input (optional) video_name: the name of raw video (assume the video format: YUV CIF 4:2:0)
 % @input (optional) frames: number of frames to analyze
 % @input (optional) width: the width of the video
@@ -19,7 +20,7 @@
 %
 %% --------------------
 
-function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, frames, width, height)
+function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, group_size, video_name, frames, width, height)
     addpath('../utils/YUV2Image');
     addpath('../utils/mirt_dctn');
     addpath('../utils');
@@ -36,12 +37,12 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, fra
     %% --------------------
     % Input
     %% --------------------
-    if nargin == 2
+    if nargin == 3
         video.file = 'stefan_cif.yuv';
         video.frames = 90;  %% 90
         video.width = 352;
         video.height = 288;
-    elseif nargin == 6
+    elseif nargin == 7
         video.file = video_name;
         video.frames = frames;
         video.width = width;
@@ -49,6 +50,7 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, fra
     else
         num_PC = 288;
         dct_thresh = 0;
+        group_size = 1;
         video.file = 'stefan_cif.yuv';
         video.frames = 90;  %% 90
         video.width = 352;
@@ -79,7 +81,15 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, fra
     %  Loop over the frames
     %% --------------------
     compressed_size = 0;
-    for k = 1:video.frames  
+    group_raw_video_vector_y = zeros(video.width, video.height * group_size);
+    group_raw_video_vector_u = zeros(video.width, video.height * group_size);
+    group_raw_video_vector_v = zeros(video.width, video.height * group_size);
+
+    for k = 1:video.frames
+        if DEBUG2
+            fprintf('frame %d\n', k);
+        end
+
         % [h, w, p] = size(mov(k).cdata);
         imgYuv = mov(k).imgYuv;
         [h, w, p] = size(imgYuv);
@@ -89,31 +99,56 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, fra
         end
 
 
-        raw_video_vector_y(:, :) = imgYuv(:,:,1);
-        raw_video_vector_u(:, :) = imgYuv(:,:,2);
-        raw_video_vector_v(:, :) = imgYuv(:,:,3);
-
+        %% --------------------
+        %% group video every "group_size" frames
+        %% --------------------
+        g_ind = mod(k-1, group_size) + 1;
+        height_start = (g_ind-1) * video.height + 1;
+        height_end   = g_ind * video.height;
         
+        
+        group_raw_video_vector_y(:, height_start:height_end) = imgYuv(:,:,1)';
+        group_raw_video_vector_u(:, height_start:height_end) = imgYuv(:,:,2)';
+        group_raw_video_vector_v(:, height_start:height_end) = imgYuv(:,:,3)';
+
+
+
+        if g_ind ~= group_size & k ~= video.frames
+            %% not enough frames for this group
+            continue;
+        end
+
+
+        %% with enough frames for this group
+        group_width = video.width;
+        group_height = video.height * g_ind;
+
+        %% resize the matrix due to the last group may not have enough frames
+        group_raw_video_vector_y = group_raw_video_vector_y(:, 1:group_height);
+        group_raw_video_vector_u = group_raw_video_vector_u(:, 1:group_height);
+        group_raw_video_vector_v = group_raw_video_vector_v(:, 1:group_height);
+        
+
         %% --------------------
         %  DCT
         %% --------------------
-        raw_video_vector_y = mirt_dctn(raw_video_vector_y);
-        raw_video_vector_u = mirt_dctn(raw_video_vector_u);
-        raw_video_vector_v = mirt_dctn(raw_video_vector_v);
+        group_raw_video_vector_y = mirt_dctn(group_raw_video_vector_y);
+        group_raw_video_vector_u = mirt_dctn(group_raw_video_vector_u);
+        group_raw_video_vector_v = mirt_dctn(group_raw_video_vector_v);
 
 
         %% --------------------
         %  values after DCT < dct_thresh, make them 0
         %% --------------------
-        raw_video_vector_y(abs(raw_video_vector_y) < dct_thresh) = 0;
-        raw_video_vector_u(abs(raw_video_vector_u) < dct_thresh) = 0;
-        raw_video_vector_v(abs(raw_video_vector_v) < dct_thresh) = 0;
+        group_raw_video_vector_y(abs(group_raw_video_vector_y) < dct_thresh) = 0;
+        group_raw_video_vector_u(abs(group_raw_video_vector_u) < dct_thresh) = 0;
+        group_raw_video_vector_v(abs(group_raw_video_vector_v) < dct_thresh) = 0;
 
 
 
-        rank_y = min(rank(raw_video_vector_y), num_PC);
-        rank_u = min(rank(raw_video_vector_u), num_PC);
-        rank_v = min(rank(raw_video_vector_v), num_PC);
+        rank_y = min(rank(group_raw_video_vector_y), num_PC);
+        rank_u = min(rank(group_raw_video_vector_u), num_PC);
+        rank_v = min(rank(group_raw_video_vector_v), num_PC);
 
         if DEBUG0
             fprintf('  rank = (%d, %d, %d)\n', rank_y, rank_u, rank_v);
@@ -123,9 +158,9 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, fra
         %% --------------------
         %  PCA
         %% --------------------
-        [latent_y, U_y, eigenvector_y] = calculate_PCA(raw_video_vector_y);
-        [latent_u, U_u, eigenvector_u] = calculate_PCA(raw_video_vector_u);
-        [latent_v, U_v, eigenvector_v] = calculate_PCA(raw_video_vector_v);
+        [latent_y, U_y, eigenvector_y] = calculate_PCA(group_raw_video_vector_y);
+        [latent_u, U_u, eigenvector_u] = calculate_PCA(group_raw_video_vector_u);
+        [latent_v, U_v, eigenvector_v] = calculate_PCA(group_raw_video_vector_v);
 
 
         %% --------------------
@@ -134,7 +169,7 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, fra
         compressed_video_vector_y = PCA_compress(latent_y, U_y, eigenvector_y, rank_y);
         compressed_video_vector_u = PCA_compress(latent_u, U_u, eigenvector_u, rank_u);
         compressed_video_vector_v = PCA_compress(latent_v, U_v, eigenvector_v, rank_v);
-        compressed_size = compressed_size + (1 + w + h) * (rank_y + rank_u + rank_v);
+        compressed_size = compressed_size + (1 + group_width + group_height) * (rank_y + rank_u + rank_v);
 
 
         %% --------------------
@@ -145,9 +180,29 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, video_name, fra
         compressed_video_vector_v = mirt_idctn(compressed_video_vector_v);
 
 
-        compressed_mov(k).imgYuv(:,:,1) = compressed_video_vector_y;
-        compressed_mov(k).imgYuv(:,:,2) = compressed_video_vector_u;
-        compressed_mov(k).imgYuv(:,:,3) = compressed_video_vector_v;
+        %% --------------------
+        %% ungroup the matrix
+        %% --------------------
+        this_group_size = group_size;
+        if k == video.frames
+            this_group_size = mod(k-1, group_size)+1;
+        end
+
+
+        for this_k = (k-this_group_size+1:k)
+            if DEBUG2
+                fprintf('  ungroup frame %d\n', this_k);
+            end
+
+            this_g_ind = mod(this_k-1, group_size) + 1;
+            this_height_start = (this_g_ind-1) * video.height + 1;
+            this_height_end   = this_g_ind * video.height;
+
+            compressed_mov(this_k).imgYuv(:,:,1) = compressed_video_vector_y(:, this_height_start:this_height_end)';
+            compressed_mov(this_k).imgYuv(:,:,2) = compressed_video_vector_u(:, this_height_start:this_height_end)';
+            compressed_mov(this_k).imgYuv(:,:,3) = compressed_video_vector_v(:, this_height_start:this_height_end)';
+
+        end
 
     end %% end for all frames
 
