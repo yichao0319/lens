@@ -18,4 +18,4 @@ set xrange [0:axis_range]
 set yrange [0:axis_range]
 
 #set view map
-plot '../processed_data/subtask_process_4sq/TM/' . filename . '.txt' matrix w image notitle
+plot '../processed_data/subtask_process_4sq/TM/tmp.' . filename . '.txt' matrix w image notitle

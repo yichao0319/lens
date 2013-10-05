@@ -109,6 +109,8 @@ for folder in sort_listdir(INPUT_DIR + city):
         city_venue['lng']  = v_info['lng']
         city_venue['id']   = v_info['id']
         city_venue['name'] = v_info['name']
+        city_venue['checkinsCount'] = v_info['checkinsCount']
+        
         city_info[v] = city_venue
 
 

@@ -9,7 +9,7 @@
 ##      The city used to generate Human TM.
 ##
 ## - e.g.
-##   perl batch_plot_TM.pl Manhattan
+##   perl batch_plot_TM.pl Manhattan 300
 ##
 ######################################################
 
@@ -32,17 +32,20 @@ my $input_dir = '../processed_data/subtask_process_4sq/TM';
 my $city;
 my $file_name;
 my %period_max_value = ();
+my $matrix_size = 300;
 
 
 #############
 # check input
 #############
-if(@ARGV != 1) {
+if(@ARGV != 2) {
     print "wrong number of input: ".@ARGV."\n";
     exit;
 }
 $city = $ARGV[0];
+$matrix_size = $ARGV[1] + 0;
 $file_name = "TM_".$city."_period";
+
 
 #############
 ## Main starts here
@@ -55,10 +58,10 @@ my $num_venues = 0;
 #############
 ## get the number of venues
 #############
-print "get the number of venues\n" if($DEBUG2);
-my $cmd = "cat $input_dir/$city\_sorted.txt | wc -l";
-$num_venues = `$cmd` + 0;
-print "  $num_venues\n";
+# print "get the number of venues\n" if($DEBUG2);
+# my $cmd = "cat $input_dir/$city\_sorted.txt | wc -l";
+# $num_venues = `$cmd` + 0;
+# print "  $num_venues\n";
 
 
 #############
@@ -114,7 +117,7 @@ while (my $file = readdir(DIR)) {
             $period_max_value{$period} = 5;
         }
         elsif($period == 5) {
-            $period_max_value{$period} = 50;
+            $period_max_value{$period} = 8;
         }
         elsif($period == 10) {
             $period_max_value{$period} = 100;
@@ -127,11 +130,34 @@ while (my $file = readdir(DIR)) {
 
         print "$file ($period, $cnt): ".$period_max_value{$period}."\n" if($DEBUG1);
 
-        my $cmd = "sed 's/XXX/$file_name$period\_$cnt/;s/YYY/".$period_max_value{$period}."/;s/ZZZ/$num_venues/' plot_TM.mother.plot > tmp.plot_TM.plot";
+
+        #############
+        ## read the matrix and only output part of the matrix
+        #############
+        print "  read the matrix and only output part of the matrix\n" if($DEBUG2);
+        my $line_cnt = 0;
+        open FH, "$input_dir/$file" or die $!;
+        open FH_W, ">$input_dir/tmp.$file" or die $!;
+        while(<FH>) {
+            last if($line_cnt >= $matrix_size);
+            $line_cnt ++;
+
+            my @tmp = split(/, /, $_);
+            print FH_W join(", ", @tmp[0 .. $matrix_size-1])."\n";
+        }
+        close FH_W;
+        close FH;
+
+
+        my $cmd = "sed 's/XXX/$file_name$period\_$cnt/;s/YYY/".$period_max_value{$period}."/;s/ZZZ/$matrix_size/' plot_TM.mother.plot > tmp.plot_TM.plot";
         `$cmd`;
 
         $cmd = "gnuplot tmp.plot_TM.plot";
         `$cmd`;
+
+        $cmd = "rm $input_dir/tmp.$file";
+        `$cmd`;
+        # exit;
     }
 }
 closedir(DIR);

@@ -41,7 +41,7 @@
             b) venues - ['grp_type', 'name', 'addr', 'checkinsCount', 'cate_name', 'ts', 'hereNow', 'state', 'contact', 'cate_id', 'lat', 'grp_name', 'lng', 'usersCount', 'id', 'name']
 
         2. in other <city>, our output format is:
-            a) venues - ['lat', 'lng', 'id', 'name']
+            a) venues - ['lat', 'lng', 'id', 'name', 'checkinsCount']
 
 
 3. video
@@ -80,7 +80,7 @@
                 - The information of the venues in the city.
                   Will be link to ../data/4sq/city_info/4SQ_<city>_INFO and used in generating TM.
                 - Format:
-                  venues - ['lat', 'lng', 'id', 'name']
+                  venues - ['lat', 'lng', 'id', 'name', 'checkinsCount']
 
         - Batch Run:
             1. batch_generate_city_info.sh
@@ -146,12 +146,28 @@
     - PCA_psnr_by_frame.m
         - Goal: calculate the PSNR given a rank and video
             step 1: given a video with [frame, width, height, YUV] pixels.
-            step 2: apply DCT to each frame.
-                    frame [i, Y | U | V] = [width, height]
-            step 3: apply PCA to the DCT output with a given rank.
-            step 4: reconstruct the appriximated matrix
-            step 5: apply inverted DCT the the appriximated matrix
-            step 6: calculate PSNR
+            step 2: make a GoP every [4 or 8 or 16] frames 
+            step 3: convert GoP into a 2D matrix.
+            step 4: apply DCT to the 2D matrix.
+            step 5: apply PCA to the DCT output with a given rank.
+            step 6: reconstruct the appriximated matrix
+            step 7: apply inverted DCT the the appriximated matrix
+            step 8: calculate PSNR
+
+    - DCT_psnr.m
+        - Goal: calculate the PSNR of video compressed using DCT
+            step 1. given a video with [frame, width, height, YUV] pixels.
+            step 2: make a GoP every [4 or 8 or 16] frames 
+            step 3: apply DCT to each GoP.
+            step 4: partition a GoP into small chunks (e.g. 44x35 pixels a chunk)
+            step 5: for each chunk, calculate the error after iDCT if the chunk is removed
+            step 6: remove chunks with small error
+            step 7: apply inverted DCT to the matrix with only remaining chunks
+            step 8: calculate PSNR
+
+        - DCT_psnr_combine_yuv.m
+            The only difference of this code is to apply DCT on a 4D array: [width, height, frame, YUV].
+
         
     - yuv_psnr.m
         - Goal: calculate the PSNR of two videos

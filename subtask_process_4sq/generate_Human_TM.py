@@ -240,10 +240,14 @@ DATA_INFO = load_data(INPUT_VENUE_INFO_DIR + '4SQ_' + city + '_INFO')
 ## Venues: (<id> <location - used for sorting> <venue>)
 Venues = []
 for v in DATA_INFO:
-    Venues.append( (DATA_INFO[v]['id'], map_lat_lng_to_line(float(DATA_INFO[v]['lat']), float(DATA_INFO[v]['lng']) ), v) )
+    ## sort by (lat, lng)
+    # Venues.append( (DATA_INFO[v]['id'], map_lat_lng_to_line(float(DATA_INFO[v]['lat']), float(DATA_INFO[v]['lng']) ), v) )
+    ## sort by popularity
+    Venues.append( (DATA_INFO[v]['id'], float(DATA_INFO[v]['checkinsCount']), v) )
 
 ## sorted by the location of the venues
-sort_venues = sorted(Venues, key=itemgetter(1))
+# sort_venues = sorted(Venues, key=itemgetter(1))
+sort_venues = sorted(Venues, key=itemgetter(1), reverse=True)
 
 ## write sorted venues to the file
 fh = open(OUTPUT_DIR + city + '_sorted.txt', 'w')
@@ -255,9 +259,9 @@ for i in range(al):
             print DATA_INFO[v].keys()
             print "  " + str(DATA_INFO[v]['name'])
 
-        str_tmp = str(DATA_INFO[v]['name']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng'])
+        str_tmp = str(DATA_INFO[v]['name']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng']) + ", " + str(DATA_INFO[v]['checkinsCount'])
     else:
-        str_tmp = str(DATA_INFO[v]['city']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng'])
+        str_tmp = str(DATA_INFO[v]['city']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng']) + ", " + str(DATA_INFO[v]['checkinsCount'])
     # print str_tmp
     fh.write(str_tmp + '\n')
 fh.close()
