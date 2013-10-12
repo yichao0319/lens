@@ -2,7 +2,7 @@
 % 2013/10/04
 % Yi-Chao Chen @ UT Austin
 %
-% DCT_psnr: 3D DCT
+% DCT_psnr
 % 
 % @input (optional) num_chunks: num of chunks to have per GoP
 % @input (optional) group_size: group x frames to do PCA
@@ -17,15 +17,12 @@
 % - bus_cif.yuv
 %   CIF, YCbCr 4:2:0 planar 8 bit, 352*288, 150 frames
 %
-% e.g. 
-%   DCT_psnr(10, 4, 'stefan_cif.yuv', 90, 352, 288)
-%
 %% --------------------
 
 function [psnr, compressed_ratio] = DCT_psnr(num_chunks, group_size, video_name, frames, width, height)
-    addpath('../utils/YUV2Image');
-    addpath('../utils/mirt_dctn');
-    addpath('../utils');
+    addpath('/u/yichao/anomaly_compression/utils/YUV2Image');
+    addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
+    addpath('/u/yichao/anomaly_compression/utils');
 
     %% --------------------
     % Debugs
@@ -62,30 +59,17 @@ function [psnr, compressed_ratio] = DCT_psnr(num_chunks, group_size, video_name,
     %% --------------------
     % Variables
     %% --------------------
-    % input_dir  = '../data/video/';
-    % output_dir = '../processed_data/subtask_psnr/comp_video/';
-    % chunk_width = 44;
-    % chunk_height = 36;
-    input_dir  = '../processed_data/subtask_TM_to_video/video/';
-    output_dir = '../processed_data/subtask_psnr/comp_video/';
+    input_dir = '/u/yichao/anomaly_compression/condor_data/subtask_TM_to_video/video/';
+    output_dir = '/u/yichao/anomaly_compression/condor_data/subtask_psnr/comp_video/';
     chunk_width = 50;
     chunk_height = 50;
-
     num_chunk_w = video.width / chunk_width;
     num_chunk_h = video.height / chunk_height;
         
     
 
-    %% --------------------
-    % test
-    %% --------------------
     % [x, y, z] = convert_3d_ind(8, 8, 4, 256)
-    % return;
-    
-    % mov = loadFileYuv([input_dir, video.file], video.width, video.height, 1:video.frames);
-    % saveFileYuv2(mov, [output_dir video_name '.3DDCT.' int2str(group_size) '.' int2str(num_chunks) '.' int2str(video.frames) '.' int2str(video.width) '.' int2str(video.height) '.yuv'], 'w');
-    % return;
-
+    % return
 
 
     %% --------------------
@@ -283,6 +267,7 @@ function [psnr, compressed_ratio] = DCT_psnr(num_chunks, group_size, video_name,
     %  save file
     %% --------------------
     saveFileYuv2(compressed_mov, [output_dir video_name '.3DDCT.' int2str(group_size) '.' int2str(num_chunks) '.' int2str(video.frames) '.' int2str(video.width) '.' int2str(video.height) '.yuv'], 'w');
+    
 
     %% --------------------
     %  PSNR

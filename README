@@ -69,7 +69,7 @@
  *************************/
 
 1. subtask_process_4sq
-    - generate_city_info.py
+    a) generate_city_info.py
         - Goal: read 4sq checkins and produce the information of all venues in the dataset.
 
         - Input:
@@ -85,7 +85,7 @@
         - Batch Run:
             1. batch_generate_city_info.sh
 
-    - generate_Human_TM.py
+    b) generate_Human_TM.py
         - Goal: read 4sq checkins and produce human traffic matrix
         
         - Input: 
@@ -106,7 +106,7 @@
             1. batch_generate_Human_TM.sh
 
 
-    - plot_TM.mother.plot
+    c) plot_TM.mother.plot
         - Goal: given the Human TM generated above, plot the heat map using Gnuplot
 
         - Output:
@@ -117,16 +117,17 @@
 
 2. subtask_psnr
     To compare PSNR of videos compressed using MPEG and PCA.
+    It also output the compressed video for anomaly detection.
 
-    - PCA_psnr.m
-        - Goal: calculate the PSNR given a rank and video.
+    a) PCA_psnr.m
+        - Goal: calculate the PSNR of a video which is compressed by PCA low-rank approximation.
             step 1: given a video with [frame, width, height, YUV] pixels.
             step 2: convert to a 2D matrix: [frame, width * height * YUV]
             step 3: fragment the 2D matrix into small ones:
                     fragment i = [frame, x_i:y_i]
             step 4: apply PCA to each fragment with a given rank.
                     the rank decides the compression ratio and quality
-            step 5: reconstruct the appriximated matrix
+            step 5: reconstruct the approximated matrix
             step 6: calculate PSNR
 
         - Input:
@@ -143,22 +144,22 @@
         - Batch Run:
             1. batch_PCA_psnr.m
 
-    - PCA_psnr_by_frame.m
-        - Goal: calculate the PSNR given a rank and video
+    b) PCA_psnr_by_frame.m
+        - Goal: calculate the PSNR oa a vidoe which is compressed by PCA low-rank approximation
             step 1: given a video with [frame, width, height, YUV] pixels.
             step 2: make a GoP every [4 or 8 or 16] frames 
             step 3: convert GoP into a 2D matrix.
             step 4: apply DCT to the 2D matrix.
             step 5: apply PCA to the DCT output with a given rank.
-            step 6: reconstruct the appriximated matrix
-            step 7: apply inverted DCT the the appriximated matrix
+            step 6: reconstruct the approximated matrix
+            step 7: apply inverted DCT the the approximated matrix
             step 8: calculate PSNR
 
-    - DCT_psnr.m
-        - Goal: calculate the PSNR of video compressed using DCT
+    c) DCT_psnr.m
+        - Goal: calculate the PSNR of a video which is compressed using 3D DCT
             step 1. given a video with [frame, width, height, YUV] pixels.
             step 2: make a GoP every [4 or 8 or 16] frames 
-            step 3: apply DCT to each GoP.
+            step 3: apply 3D DCT to each GoP.
             step 4: partition a GoP into small chunks (e.g. 44x35 pixels a chunk)
             step 5: for each chunk, calculate the error after iDCT if the chunk is removed
             step 6: remove chunks with small error
@@ -168,8 +169,20 @@
         - DCT_psnr_combine_yuv.m
             The only difference of this code is to apply DCT on a 4D array: [width, height, frame, YUV].
 
-        
-    - yuv_psnr.m
+    d) DCT_psnr_combine_yuv.m
+        - Goal: Similar to "DCT_psnr.m", but instead of handling YUV seperately, this one combine them into one and apply 3D DCT to the combined matrix.
+
+        Note. it's too slow (due to the larger matrix), so not used for now...
+
+    e) compressive_sensing_psnr.m
+        - Goal: calculate the PSNR of a video which is compressed using compressive sensing.
+            step 1. given a video with [frame, width, height, YUV] pixels.
+            step 2: make a GoP every [4 or 8 or 16] frames 
+            step 3: apply compressive sensing with spatial and temporal constraints to each GoP.
+            step 4: reconstruct the GoP using U and V returned by compressive sensing
+            step 5: calculate PSNR
+
+    f) yuv_psnr.m
         - Goal: calculate the PSNR of two videos
 
         - Input: 
@@ -178,6 +191,37 @@
             3. frames: number of frames to analyze
             4. width: the width of the video
             5. height: the height of the video
+
+3. subtask_inject_error
+    The objective of this task is to inject anomalies to a given matrix or video.
+
+    a) inject_err.m
+        - Goal: inject anomalies by adding some large numbers to the given matrix.
+
+4. subtask_TM_to_video
+    Convert the matrix to a YUV video.
+    Because ffmpeg only work on video, before implementing our own MPEG encoding, we need to convert TM to video to apply MPEG based anomaly detection method. 
+
+    a) TM_to_video.m
+        - Goal: convert the given 3D matrix to a YUV video.
+            Since a pixel in the YUV video only have 1 byte, I put the 1st byte to V, 2nd byte to U, and 3rd byte to Y (assuming the values in the matrix have at most 3 bytes.)
+
+    b) sanity_check.m
+        - Goal: the code is used to check my implementation is correct..
+
+5. subtask_ffmpeg
+    Use ffmpeg to convert raw YUV video to MPEG, and also convert MPEG back to YUV video.
+    a) batch_convert.sh
+    b) batch_convert_TM.sh
+
+6. subtask_detect_anomaly
+    After getting the normal subspace (i.e. compressed video) using scripts in "subtask_psnr" and "subtask_ffmpeg, the scripts here calculate the abnormal subspace (i.e. the difference between raw video and compressed video) and detect anomalies.
+
+    a) diff_orig_comp_video.m
+        - Goal: calculate the difference between raw video and compressed video.
+
+    b) detect_anomaly.m
+        - Goal: given the difference time-series from "diff_orig_comp_video.m", this script detect anomalies and return the performance.
 
 
 /*************************

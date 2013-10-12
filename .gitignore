@@ -3,6 +3,7 @@
 #####
 data
 
+
 #####
 ## output
 #####
@@ -16,6 +17,7 @@ figures
 tmp*
 */tmp*
 
+
 #####
 ## compile output
 #####
@@ -24,6 +26,16 @@ tmp*
 
 
 #####
-### to delete
+## to delete
 #####
 */delete
+*/*/delete
+*.mine
+*.org
+*.bk
+
+#####
+## condor
+#####
+condor_data
+

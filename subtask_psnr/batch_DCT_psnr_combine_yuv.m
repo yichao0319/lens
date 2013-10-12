@@ -13,8 +13,8 @@ for group_size = group_sizes
     for num_chunks = max_chunks
         video = 'stefan_cif.yuv';
         [psnr, compressed_ratio] = DCT_psnr_combine_yuv(num_chunks, group_size, video, 90, 352, 288);
-        fprintf('%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
-        fprintf(fh, '%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
+        fprintf('%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
+        fprintf(fh, '%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
     end
 end
 
@@ -22,8 +22,8 @@ for group_size = group_sizes
     for num_chunks = max_chunks
         video = 'bus_cif.yuv';
         [psnr, compressed_ratio] = DCT_psnr_combine_yuv(num_chunks, group_size, video, 150, 352, 288);
-        fprintf('%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
-        fprintf(fh, '%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
+        fprintf('%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
+        fprintf(fh, '%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
     end
 end
 
@@ -31,8 +31,8 @@ for group_size = group_sizes
     for num_chunks = max_chunks
         video = 'foreman_cif.yuv';
         [psnr, compressed_ratio] = DCT_psnr_combine_yuv(num_chunks, group_size, video, 300, 352, 288);
-        fprintf('%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
-        fprintf(fh, '%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
+        fprintf('%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
+        fprintf(fh, '%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
     end
 end
 
@@ -40,8 +40,8 @@ for group_size = group_sizes
     for num_chunks = max_chunks
         video = 'coastguard_cif.yuv';
         [psnr, compressed_ratio] = DCT_psnr_combine_yuv(num_chunks, group_size, video, 300, 352, 288);
-        fprintf('%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
-        fprintf(fh, '%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
+        fprintf('%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
+        fprintf(fh, '%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
 
     end
 end
@@ -50,8 +50,8 @@ for group_size = group_sizes
     for num_chunks = max_chunks
         video = 'highway_cif.yuv';
         [psnr, compressed_ratio] = DCT_psnr_combine_yuv(num_chunks, group_size, video, 300, 352, 288);
-        fprintf('%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
-        fprintf(fh, '%s, %d, %d, %d, %f, %f\n', video, dct_thresh, r, group_size, compressed_ratio, psnr);
+        fprintf('%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
+        fprintf(fh, '%s, %d, %d, %f, %f\n', video, num_chunks, group_size, compressed_ratio, psnr);
     end
 end
 

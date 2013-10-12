@@ -21,9 +21,10 @@
 %% --------------------
 
 function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, group_size, video_name, frames, width, height)
-    addpath('../utils/YUV2Image');
-    addpath('../utils/mirt_dctn');
-    addpath('../utils');
+    addpath('/u/yichao/anomaly_compression/utils/YUV2Image');
+    addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
+    addpath('/u/yichao/anomaly_compression/utils');
+    addpath('/u/yichao/anomaly_compression/subtask_psnr');
 
     %% --------------------
     % Debugs
@@ -61,8 +62,8 @@ function [psnr, compressed_ratio] = PCA_psnr(num_PC, dct_thresh, group_size, vid
     %% --------------------
     % Variables
     %% --------------------
-    input_dir = '../data/video/';
-    output_dir = '../processed_data/subtask_psnr/comp_video/';
+    input_dir = '/u/yichao/anomaly_compression/condor_data/subtask_TM_to_video/video/';
+    output_dir = '/u/yichao/anomaly_compression/condor_data/subtask_psnr/comp_video/';
     
 
     %% --------------------
