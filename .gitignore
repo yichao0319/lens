@@ -35,7 +35,9 @@ tmp*
 *.bk
 
 #####
-## condor
+## condor, cvs
 #####
 condor_data
+cvs_repository
+
 

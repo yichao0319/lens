@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Yi-Chao Chen
-%% 2013.10.08 @ UT Austin
+%% 2013.10.13 @ UT Austin
 %%
 %% - Input:
 %%   @option_dect: options to do anomaly detection
@@ -11,14 +11,29 @@
 %%      1: sum of absolute diff
 %%      2: mean square error (MSE)
 %%      3: mean absolute error (MAE)
+%%   @option_frames: determine which realted frames to compare
+%%      -m: the previous m-th frame
+%%      0 : current frame
+%%      n : the next n-th frame
+%%   @option_blocks: determine which related blocks to compare
+%%      -1: all blocks
+%%      0 : corresponding block
+%%      4 : near by 5 blocks
+%%      8 : near by 9 blocks
+%%
+%%      24 20 9  13 21
+%%      19 9  1  5  14
+%%      12 4  0  2  10
+%%      18 7  3  6  15
+%%      23 17 11 16 22
 %%
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based('TM_Airport_period5_.exp0.', 12, 300, 300, 100, 100, 5, 1, 1)
+%%     [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based('TM_Airport_period5_.exp0.', 12, 300, 300, 30, 30, 50, 3, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num_frames, width, height, block_width, block_height, thresh, option_dect, option_delta)
+function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num_frames, width, height, block_width, block_height, thresh, option_dect, option_delta, option_frames, option_blocks)
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -29,6 +44,7 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
     DEBUG0 = 0;
     DEBUG1 = 1;
     DEBUG2 = 1;
+    DEBUG3 = 0; %% block index check
 
 
     %% --------------------
@@ -88,6 +104,8 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
     if DEBUG1, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
     
 
+    compared_data = data;
+    
     %% --------------------
     %% DCT to get clean frame for the first frame 
     %% --------------------
@@ -101,11 +119,9 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
 
                 tmp = mirt_dctn(data(w_s:w_e, h_s:h_e, 1));
                 tmp = round(tmp ./ quantization) .* quantization;
-                pre_frame(w_s:w_e, h_s:h_e) = mirt_idctn(tmp);
+                compared_data(w_s:w_e, h_s:h_e, 1) = mirt_idctn(tmp);
             end
         end
-    else
-        pre_frame = data(:,:,1);
     end
 
 
@@ -123,26 +139,48 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
             for h = [1:num_blocks(2)]
                 h_s = (h-1)*block_height + 1;
                 h_e = h*block_height;
-                if DEBUG0, fprintf('  block: [%d,%d]\n', w, h); end
+                if DEBUG3, fprintf('  block: [%d,%d]\n', w, h); end
                 
                 this_block = data(w_s:w_e, h_s:h_e, frame);
                 meanX2 = mean(reshape(this_block, [], 1).^2);
                 meanX = mean(reshape(this_block, [], 1));
 
                 %% ------------
-                %% find the best fit block in the previous frame
+                %% find the best fit block in the specified frames
                 min_delta = -1;
-                for w2 = [1:num_blocks(1)]
-                    w2_s = (w2-1)*block_width + 1;
-                    w2_e = w2*block_width;
-                    for h2 = [1:num_blocks(2)]
+                for ci = [1:length(option_frames)]
+                    if DEBUG3, fprintf('    compare f:%d, b:%d\n', option_frames(ci), option_blocks(ci)); end
+
+                    comp_frame = frame + option_frames(ci);
+                    if (frame == 1) & (comp_frame < 1)
+                        comp_frame = 1;
+                    end
+
+                    if (comp_frame < 1) | (comp_frame > num_frames)
+                        continue;
+                    end
+
+                    [w2s, h2s] = find_block_ind(w, h, num_blocks, option_blocks(ci));
+                    if DEBUG0, fprintf('    w2s:%d, h2s:%d\n', length(w2s), length(h2s)); end
+
+                    for ind2 = [1:length(w2s)]
+                        w2 = w2s(ind2);
+                        w2_s = (w2-1)*block_width + 1;
+                        w2_e = w2*block_width;
+
+                        h2 = h2s(ind2);
                         h2_s = (h2-1)*block_height + 1;
                         h2_e = h2*block_height;
-                        if DEBUG0
-                            fprintf('    pre_frame=[%d,%d], w=%d-%d, h=%d-%d\n', size(pre_frame), w2_s, w2_e, h2_s, h2_e);
+
+                        if (comp_frame == frame) & (w2 == w) & (h2 == h) & (frame ~= 1)
+                            continue;
                         end
 
-                        prev_block = pre_frame(w2_s:w2_e, h2_s:h2_e);
+                        if DEBUG3
+                            fprintf('    - f%d blocks [%d,%d], w=%d-%d, h=%d-%d\n', comp_frame, w2, h2, w2_s, w2_e, h2_s, h2_e);
+                        end
+
+                        prev_block = compared_data(w2_s:w2_e, h2_s:h2_e, comp_frame);
 
                         delta = prev_block - this_block;
 
@@ -156,18 +194,22 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
                             this_delta = -1;
                         end
 
-                        if this_delta < 0, fprintf('!!!!!should not < 0!!!!\n'); end
+                        if this_delta < 0
+                            fprintf('!!!!!should not < 0!!!!\n'); 
+                            % tp = -1; tn = -1; fp = -1; fn = -1; precision = -1; recall = -1; f1score = -1;
+                            return;
+                        end
 
                         if this_delta < min_delta | min_delta == -1
                             min_delta = this_delta;
                             min_delta_block = prev_block;
                             min_w = w2;
                             min_h = h2;
+                            min_f = comp_frame;
                         end
                     end
                 end
-
-                if DEBUG0, fprintf('    block (%d, %d) with min delta = %f\n', min_w, min_h, min_delta); end
+                if DEBUG0, fprintf('    frame %d block (%d, %d) with min delta = %f\n', min_f, min_w, min_h, min_delta); end
                 %% end find the best fit block in the previous frame
                 %% ------------
 
@@ -188,9 +230,10 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
         if DEBUG1, fprintf('    size of detect err = %d, %d\n', size(detect_err_ind)); end
         
         
-        pre_frame = data(:,:,frame);
         if ismember(option_dect, [2, 3])
-            pre_frame(this_frame_err_ind) = this_frame(this_frame_err_ind);
+            nomal_frame = compared_data(:, : , frame);
+            nomal_frame(this_frame_err_ind) = this_frame(this_frame_err_ind);
+            compared_data(:, : , frame) = nomal_frame;
         end
     end
 
@@ -208,3 +251,75 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
     f1score = 2 * precision * recall / (precision + recall);
 end
 
+
+
+function [w2s, h2s] = find_block_ind(w, h, num_blocks, blocks)
+    % fprintf('find block ind: w=%d, h=%d, nw=%d, nh=%d, blocks=%d', w, h, num_blocks, blocks);
+    
+    if blocks == -1
+        w2s = [1:num_blocks(1)];
+        h2s = [1:num_blocks(2)];
+        return;
+    else
+        if blocks >= 0
+            w2s = [w];
+            h2s = [h];
+        end
+
+        if blocks >= 1
+            if w > 1
+                w2s = [w2s, w-1];
+                h2s = [h2s, h];
+            end
+        end
+
+        if blocks >= 2
+            if h < num_blocks(2)
+                w2s = [w2s, w];
+                h2s = [h2s, h+1];
+            end
+        end
+
+        if blocks >= 3
+            if w < num_blocks(1)
+                w2s = [w2s, w+1];
+                h2s = [h2s, h];
+            end
+        end
+
+        if blocks >= 4
+            if h > 1
+                w2s = [w2s, w];
+                h2s = [h2s, h-1];
+            end
+        end
+
+        if blocks >= 5
+            if w > 1 & h < num_blocks(2)
+                w2s = [w2s, w-1];
+                h2s = [h2s, h+1];
+            end
+        end
+
+        if blocks >= 6
+            if w < num_blocks(1) & h < num_blocks(2)
+                w2s = [w2s, w+1];
+                h2s = [h2s, h+1];
+            end
+        end
+
+        if blocks >= 7
+            if w < num_blocks(1) & h > 1
+                w2s = [w2s, w+1];
+                h2s = [h2s, h-1];
+            end
+        end
+
+        if blocks >= 8
+            if w > 1 & h > 1
+                w2s = [w2s, w-1];
+                h2s = [h2s, h-1];
+            end
+        end
+    end
+end

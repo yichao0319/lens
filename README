@@ -63,6 +63,11 @@
     The video files are large, so I put them in valleyview local disk: 
     /var/local/yichao/anomaly_compression/data/video/
 
+4. huawei_cellular/BS_gps_hourly_traffic.txt
+   TM sample produced upon 3G dataset.
+   - row: 3075 rows, each row represents the traffic time series of one Base Station
+     column: 26 columns, first two are gps values, next 24 columns represent 24 one-hour traffic(in bytes).
+
 
 /*************************
  * Subtasks
