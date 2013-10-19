@@ -14,7 +14,15 @@
 %%      2: mean square error (MSE)
 %%      3: mean absolute error (MAE)
 %%   @option_frames: determine which realted frames to compare
+%%      -m: the previous m-th frame
+%%      0 : current frame
+%%      n : the next n-th frame
 %%   @option_blocks: determine which related blocks to compare
+%%      -1: all blocks
+%%      0 : corresponding block
+%%      4 : near by 5 blocks
+%%      8 : near by 9 blocks
+%%
 %%      24 20 9  13 21
 %%      19 9  1  5  14
 %%      12 4  0  2  10
@@ -24,7 +32,7 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based('TM_Airport_period5_.exp0.', 12, 300, 300, 30, 30, 100, 3, 1, [-1], [-1])
+%%     [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based('TM_Airport_period5_.exp0.', 12, 300, 300, 30, 30, 50, 3, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num_frames, width, height, block_width, block_height, thresh, option_dect, option_delta, option_frames, option_blocks)
