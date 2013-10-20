@@ -259,9 +259,9 @@ for i in range(al):
             print DATA_INFO[v].keys()
             print "  " + str(DATA_INFO[v]['name'])
 
-        str_tmp = str(DATA_INFO[v]['name']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng']) + ", " + str(DATA_INFO[v]['checkinsCount'])
+        str_tmp = str(DATA_INFO[v]['name']) + '|||' + str(DATA_INFO[v]['lat']) + "|||" + str(DATA_INFO[v]['lng']) + "|||" + str(DATA_INFO[v]['checkinsCount'])
     else:
-        str_tmp = str(DATA_INFO[v]['city']) + ', ' + str(DATA_INFO[v]['lat']) + ", " + str(DATA_INFO[v]['lng']) + ", " + str(DATA_INFO[v]['checkinsCount'])
+        str_tmp = str(DATA_INFO[v]['city']) + '|||' + str(DATA_INFO[v]['lat']) + "|||" + str(DATA_INFO[v]['lng']) + "|||" + str(DATA_INFO[v]['checkinsCount'])
     # print str_tmp
     fh.write(str_tmp + '\n')
 fh.close()
