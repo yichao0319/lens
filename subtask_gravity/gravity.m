@@ -30,8 +30,9 @@ function [coeff] = gravity(filename, num_frames, width, height, const, opt_dist)
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
-    output_dir = '../processed_data/subtask_gravity/output/';
+    input_TM_dir  = '../processed_data/subtask_inject_error/TM_err/';
+    input_4sq_dir = '../processed_data/subtask_process_4sq/TM/';
+    output_dir    = '../processed_data/subtask_gravity/output/';
 
 
     %% --------------------
@@ -49,7 +50,8 @@ function [coeff] = gravity(filename, num_frames, width, height, const, opt_dist)
     %% Read location and mass of each venue
     %% --------------------
     if DEBUG2, fprintf('Read location and mass of each venue\n'); end
-    [location, mass] = get_venue_info(filename, '4sq', width, height);
+    [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
+
     if DEBUG0
         fprintf('  size of location: %d, %d\n', size(location));
         fprintf('  size of mass: %d, %d\n', size(mass));
@@ -161,37 +163,6 @@ function [coeff] = gravity(filename, num_frames, width, height, const, opt_dist)
     if DEBUG0, fprintf('  size of ground truth: %d, %d\n', size(ground_truth)); end
     if DEBUG0, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
 
-end
-
-
-
-%% get_venue_info
-function [location, mass] = get_venue_info(filename, TM_type, width, height)
-
-    if TM_type == '4sq'
-        input_dir = '../processed_data/subtask_process_4sq/TM/';
-
-        if findstr(filename, 'Airport')
-            info_file = 'Airport_sorted.txt';
-        elseif findstr(filename, 'Austin')
-            info_file = 'Austin_sorted.txt';
-        elseif findstr(filename, 'Manhattan')
-            info_file = 'Manhattan_sorted.txt';
-        elseif findstr(filename, 'San_Francisco')
-            info_file = 'San_Francisco_sorted.txt';
-        end
-        
-        % fprintf('  info file = %s\n', [input_dir info_file]);
-
-        fid = fopen([input_dir info_file]);
-        c = textscan(fid, '%s%f%f%f', 'Delimiter', '|', 'MultipleDelimsAsOne', 1);
-        fclose(fid);
-    end
-    
-    location = [c{2}, c{3}];
-    location = location(1:width, :);
-    mass = c{4};
-    mass = mass(1:width, :);
 end
 
 
