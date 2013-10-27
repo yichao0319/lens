@@ -25,9 +25,9 @@ function P = tensorprod(U,V,W)
   [nv,rv] = size(V);
   [nw,rw] = size(W);
 
-  if (range([ru rv rw]) > 0)
-    error('U, V, W have incompatible sizes');
-  end
+  % if (range([ru rv rw]) > 0)
+  %   error('U, V, W have incompatible sizes');
+  % end
 
   VW = zeros(nv*nw,ru);
   for i = 1:ru
