@@ -198,6 +198,7 @@ if($READ_IPS) {
     print "read ips\n" if($DEBUG2);
 
     open FH, "$ips_dir/$ips_file" or die $!;
+    my $cnt = 0;
     while(<FH>) {
         chomp;
         
@@ -246,6 +247,46 @@ if($READ_IPS) {
             $ip_info{IP}{$ip}{AREA} = $area_code;
             $ip_info{IP}{$ip}{METRO} = $metro_code;
             $ip_info{IP}{$ip}{REGISTRY} = $registry;
+
+            $cnt ++;
+            if($cnt % 2000 == 0) {
+                $cnt = 0;
+                
+                print "update table..\n";
+                #############
+                ## update geo as table
+                #############
+                print "update geo as table\n" if($DEBUG2);
+                open FH, "> $table_dir/$table_file" or die $!;
+                foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
+                    print FH join(", ", ($ip,
+                                         $ip_info{IP}{$ip}{LAT},
+                                         $ip_info{IP}{$ip}{LNG},
+                                         $ip_info{IP}{$ip}{ASN},
+                                         $ip_info{IP}{$ip}{BGP_PREFIX},
+                                         $ip_info{IP}{$ip}{COUNTRY_CODE},
+                                         $ip_info{IP}{$ip}{COUNTRY_NAME},
+                                         $ip_info{IP}{$ip}{REGION_CODE},
+                                         $ip_info{IP}{$ip}{REGION_NAME},
+                                         $ip_info{IP}{$ip}{CITY},
+                                         $ip_info{IP}{$ip}{ZIP},
+                                         $ip_info{IP}{$ip}{AREA},
+                                         $ip_info{IP}{$ip}{METRO},
+                                         $ip_info{IP}{$ip}{REGISTRY}) )."\n";
+                }
+                close FH;
+
+
+                #############
+                ## update invalid IPs
+                #############
+                print "update invalid IPs\n" if($DEBUG2);
+                open FH, "> $invalid_dir/$invalid_file" or die $!;
+                foreach my $ip (sort {$a cmp $b} (keys %{ $invalid_info{IP} })) {
+                    print FH "$ip\n";
+                }
+                close FH;
+            }
         }
         else {
             ## invalid
