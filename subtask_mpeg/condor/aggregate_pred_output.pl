@@ -131,7 +131,7 @@ for my $file_name ("TM_Airport_period5_") {
                                 $data{TRACE}{"$file_name"}{OPT_SWAP_MAT}{$opt_swap_mat}{OPT_DELTA}{$opt_delta}{OPT_FB}{$opt_fb}{BLOCK_SIZE}{"$block_size,$block_size"}{LOSS_RATE}{$loss_rate}{SEED}{$seed}{MAE} = $mae;
                                 $data{TRACE}{"$file_name"}{OPT_SWAP_MAT}{$opt_swap_mat}{OPT_DELTA}{$opt_delta}{OPT_FB}{$opt_fb}{BLOCK_SIZE}{"$block_size,$block_size"}{LOSS_RATE}{$loss_rate}{SEED}{$seed}{CC} = $cc;
                                 
-                                my $buf = "$file_name, $num_frames, $width, $height, $opt_swap_mat, $opt_delta, $block_size, $block_size, $loss_rate, $seed, $mse, $mae, $cc\n";
+                                my $buf = "$file_name, $num_frames, $width, $height, $opt_swap_mat, $opt_delta, $opt_fb, $block_size, $block_size, $loss_rate, $seed, $mse, $mae, $cc\n";
                                 print $buf;
                                 print FH_OUT $buf;
 

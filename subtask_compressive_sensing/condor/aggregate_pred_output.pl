@@ -91,17 +91,17 @@ for my $file_name ("TM_Airport_period5_") {
                     ## gnuplot - MSE
                     my $cmd = "sed 's/FILENAME/$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate/g;s/FIGNAME/$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mse/g;s/X_RANGE_S//g;s/X_RANGE_E//g;s/Y_RANGE_S//g;s/Y_RANGE_E//g;s/X_LABEL/seed/g;s/Y_LABEL/MSE/g;s/DEGREE/-45/g;' $gnuplot_mother.mother.plot > tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mse.plot";
                     `$cmd`;
-                    open FH_GNU, ">> tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mse.plot" or die $!;
+                    open FH_GNU_MSE, ">> tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mse.plot" or die $!;
 
                     ## gnuplot - MAE
                     my $cmd = "sed 's/FILENAME/$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate/g;s/FIGNAME/$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mae/g;s/X_RANGE_S//g;s/X_RANGE_E//g;s/Y_RANGE_S//g;s/Y_RANGE_E//g;s/X_LABEL/seed/g;s/Y_LABEL/MAE/g;s/DEGREE/-45/g;' $gnuplot_mother.mother.plot > tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mae.plot";
                     `$cmd`;
-                    open FH_GNU, ">> tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mae.plot" or die $!;
+                    open FH_GNU_MAE, ">> tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.mae.plot" or die $!;
 
                     ## gnuplot - CC
                     my $cmd = "sed 's/FILENAME/$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate/g;s/FIGNAME/$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.cc/g;s/X_RANGE_S//g;s/X_RANGE_E//g;s/Y_RANGE_S//g;s/Y_RANGE_E//g;s/X_LABEL/seed/g;s/Y_LABEL/CC/g;s/DEGREE/-45/g;' $gnuplot_mother.mother.plot > tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.cc.plot";
                     `$cmd`;
-                    open FH_GNU, ">> tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.cc.plot" or die $!;
+                    open FH_GNU_CC, ">> tmp.$gnuplot_mother.$func.$file_name.$group_size.$opt_swap_mat.$opt_type.$loss_rate.cc.plot" or die $!;
 
 
                     my $first_seed = 1;
