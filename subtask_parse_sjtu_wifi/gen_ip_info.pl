@@ -96,7 +96,7 @@ my $text_parser = DateTime::Format::Strptime->new(
 #############
 # foreach my $file (sort {$a cmp $b} @files) {
 foreach my $file ($filename) {
-    print $file."\n" if($DEBUG2);
+    print "$input_dir/$file\n" if($DEBUG2);
 
     my $dt = $filename_parser->parse_datetime($file);
     print "  ".$dt->year()."/".$dt->month()."/".$dt->day()." ".$dt->hour().":".$dt->minute().":".$dt->second()."\n" if($DEBUG1);
@@ -154,12 +154,14 @@ foreach my $file ($filename) {
 
 
             ## check if this IP is valid
-            if($lat != 0 and $lng != 0 and $asn ne "NA") {
+            if( ($lat != 0 or $lng != 0) and $asn ne "NA") {
                 $valid = 1;
                 ($src_ip, $src_country_code, $src_country_name, $src_region_code, $src_region_name, $src_city, $src_zip, $src_lat, $src_lng, $src_metro_code, $src_area_code, $src_asn, $src_bgp_prefix, $src_registry) = ($this_src, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code, $asn+0, $bgp_prefix, $registry);
             }
             else {
-                $ip_info{IP}{$this_src}{INVALID} = 1;
+                if($asn eq "NA") {
+                    $ip_info{IP}{$this_src}{INVALID} = 1;
+                }
             }
         }
         next unless($valid);

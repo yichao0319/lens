@@ -81,11 +81,6 @@ $matrix_type = $ARGV[0];
 # Main starts
 #############
 
-#############
-# Read AP location
-#############
-
-
 my @files;
 opendir(DIR, "$input_dir") or die $!;
 while (my $file = readdir(DIR)) {
