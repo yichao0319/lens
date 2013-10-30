@@ -76,7 +76,8 @@ foreach my $file (sort {$a cmp $b} @files) {
     #############
     ## open the file
     #############
-    open FH, "$input_dir/$file" or die $!;
+    # open FH, "$input_dir/$file" or die $!;
+    open FH, "| bzcat $input_dir/$file" or die $!;
     while (<FH>) {
         chomp;
         my ($ind, $time, $mac_src, $mac_dst, $len, $src, $dst) = split(/\|/, $_);
