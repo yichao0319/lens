@@ -1,8 +1,11 @@
 
 package MyUtil;
 
-use POSIX qw/floor/;
 use strict;
+
+use POSIX qw/floor/;
+use Math::Trig;
+
 
 #######
 # find the name of /dfeed_8/uverse/stb/ban_rg_stb_mappings/2010/07/02/BAN_RG_STB_MAPPINGS.20100702.dat.gz
@@ -866,5 +869,28 @@ sub f1_score {
 	return 0 if(($precision + $recall) == 0);
 	return (2 * $precision * $recall / ($precision + $recall));
 }
+
+sub pos2dist {
+	my ($lat1, $lng1, $lat2, $lng2) = @_;
+
+	if($lng1 < 0) {
+		$lng1 += 360;
+	}
+    if($lng2 < 0) {
+    	$lng2 += 360;
+    }
+
+	my $R_aver = 6374;
+    my $deg2rad = pi/180;
+    
+    $lat1 *= $deg2rad;
+    $lng1 *= $deg2rad;
+    $lat2 *= $deg2rad;
+    $lng2 *= $deg2rad;
+
+    my $dist = $R_aver * acos(cos($lat1)*cos($lat2)*cos($lng1-$lng2) + sin($lat1)*sin($lat2));
+}
+
+
 
 1;  		# 回傳一個真值
