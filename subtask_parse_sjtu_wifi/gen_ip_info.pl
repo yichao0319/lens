@@ -37,13 +37,21 @@ my $DEBUG4 = 1; ## parse file
 #############
 # Variables
 #############
-my $input_dir  = "../processed_data/subtask_parse_sjtu_wifi/text";
-my $output_dir = "../processed_data/subtask_parse_sjtu_wifi/ip_info";
+my $input_dir   = "../processed_data/subtask_parse_sjtu_wifi/text";
+my $table_dir   = "../processed_data/subtask_parse_sjtu_wifi/ip_info";
+my $invalid_dir = "../processed_data/subtask_parse_sjtu_wifi/ip_info";
+my $output_dir  = "../processed_data/subtask_parse_sjtu_wifi/ip_info";
+
+my $table_file   = "ip_geo_as_table.txt";
+my $invalid_file = "ip_geo_as_invalid.txt";
 
 my $file_fullpath;
 my $filename;
 
 my %ip_info = ();  ## IP - MAC - [TX | RX | TX_CNT | RX_CNT | LAT | LNG | ASN | BGP_PREFIX | COUNTRY_CODE | COUNTRY_NAME | REGION_CODE | REGION_NAME | CITY | ZIP | AREA | METRO | REGISTRY]
+
+my %ip_table_info = ();
+my %invalid_info = ();
 
 #############
 # check input
@@ -77,24 +85,33 @@ my $text_parser = DateTime::Format::Strptime->new(
 
 
 #############
-## list all files
+# read IP GEO/AS Info
 #############
-# my @files;
-# opendir(DIR, "$input_dir") or die $!;
-# while (my $file = readdir(DIR)) {
-#     next if($file =~ /^\.+/);  ## don't show "." and ".."
-#     next if(-d "$input_dir/$file");  ## don't show directories
+print "read IP GEO/AS Info\n" if($DEBUG2);
+%ip_table_info = IPTool::read_geo_as_table("$table_dir/$table_file");
 
-#     # print "$file\n";
-#     push(@files, $file);
-# }
-# closedir(DIR);
+
+#############
+# read invalid IPs
+#############
+print "read invalid IPs\n" if($DEBUG2);
+
+open FH, "$invalid_dir/$invalid_file" or die $!;
+while(<FH>) {
+    chomp;
+    
+    my $ip = $_;
+    next unless($ip =~ /\d+\.\d+\.\d+\.\d+/);
+
+    print "- ".$ip."\n" if($DEBUG0);
+    $invalid_info{IP}{$ip} = 1;
+}
+close FH;
 
 
 #############
 ## for each file, get IP info
 #############
-# foreach my $file (sort {$a cmp $b} @files) {
 foreach my $file ($filename) {
     print "$input_dir/$file\n" if($DEBUG2);
 
@@ -107,7 +124,8 @@ foreach my $file ($filename) {
     #############
     print "  parse the file\n" if($DEBUG2);
 
-    open FH, "$input_dir/$file" or die $!;
+    # open FH, "$input_dir/$file" or die $!;
+    open FH, "| bzcat $input_dir/$file" or die $!;
     while(<FH>) {
         chomp;
         my ($ind, $time, $mac_src, $mac_dst, $len, $src, $dst) = split(/\|/, $_);
@@ -135,34 +153,45 @@ foreach my $file ($filename) {
                 unless(exists $ip_info{IP}{$this_src}{INVALID}) {
                     $valid = 1;
                     $src_ip = $this_src;
+                    last;
                 }
                 next;
             }
             
             print "      = $this_src\n" if($DEBUG4);
 
-            ## ip2geo
-            my ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) = IPTool::ip2geo($this_src);
-            $lat += 0; $lng += 0;
+            # ## ip2geo
+            # my ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) = IPTool::ip2geo($this_src);
+            # $lat += 0; $lng += 0;
 
-            print "        geo: ".join("|", ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) )."\n" if($DEBUG4);
+            # print "        geo: ".join("|", ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) )."\n" if($DEBUG4);
             
-            ## ip2as
-            my $format = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H-%M-%S %Z' );
-            my ($asn, $tmp2, $bgp_prefix, $country, $registry) = IPTool::ip2asn($this_src, $format->format_datetime($pkt_dt));
-            print "        as: ".join("|", ($asn, $bgp_prefix, $country, $registry))."\n" if($DEBUG4);
+            # ## ip2as
+            # my $format = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H-%M-%S %Z' );
+            # my ($asn, $tmp2, $bgp_prefix, $country, $registry) = IPTool::ip2asn($this_src, $format->format_datetime($pkt_dt));
+            # print "        as: ".join("|", ($asn, $bgp_prefix, $country, $registry))."\n" if($DEBUG4);
 
 
-            ## check if this IP is valid
-            if( ($lat != 0 or $lng != 0) and $asn ne "NA") {
+            # ## check if this IP is valid
+            # if( ($lat != 0 or $lng != 0) and $asn ne "NA") {
+            #     $valid = 1;
+            #     ($src_ip, $src_country_code, $src_country_name, $src_region_code, $src_region_name, $src_city, $src_zip, $src_lat, $src_lng, $src_metro_code, $src_area_code, $src_asn, $src_bgp_prefix, $src_registry) = ($this_src, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code, $asn+0, $bgp_prefix, $registry);
+            # }
+            # else {
+            #     if($asn eq "NA") {
+            #         $ip_info{IP}{$this_src}{INVALID} = 1;
+            #     }
+            # }
+
+            if(exists $ip_table_info{IP}{$this_src}) {
                 $valid = 1;
-                ($src_ip, $src_country_code, $src_country_name, $src_region_code, $src_region_name, $src_city, $src_zip, $src_lat, $src_lng, $src_metro_code, $src_area_code, $src_asn, $src_bgp_prefix, $src_registry) = ($this_src, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code, $asn+0, $bgp_prefix, $registry);
+                ($src_ip, $src_lat, $src_lng, $src_asn, $src_bgp_prefix, $src_country_code, $src_country_name, $src_region_code, $src_region_name, $src_city, $src_zip, $src_area_code, $src_metro_code, $src_registry) = ($this_src, $ip_table_info{IP}{$this_src}{LAT}, $ip_table_info{IP}{$this_src}{LNG}, $ip_table_info{IP}{$this_src}{ASN}, $ip_table_info{IP}{$this_src}{BGP_PREFIX}, $ip_table_info{IP}{$this_src}{COUNTRY_CODE}, $ip_table_info{IP}{$this_src}{COUNTRY_NAME}, $ip_table_info{IP}{$this_src}{REGION_CODE}, $ip_table_info{IP}{$this_src}{REGION_NAME}, $ip_table_info{IP}{$this_src}{CITY}, $ip_table_info{IP}{$this_src}{ZIP}, $ip_table_info{IP}{$this_src}{AREA}, $ip_table_info{IP}{$this_src}{METRO}, $ip_table_info{IP}{$this_src}{REGISTRY});
+                last;
             }
             else {
-                if($asn eq "NA") {
-                    $ip_info{IP}{$this_src}{INVALID} = 1;
-                }
+                $ip_info{IP}{$this_src}{INVALID} = 1;
             }
+
         }
         next unless($valid);
 
@@ -177,28 +206,38 @@ foreach my $file ($filename) {
                 unless(exists $ip_info{IP}{$this_dst}{INVALID}) {
                     $valid = 1;
                     $dst_ip = $this_dst;
+                    last;
                 }
                 next;
             }
             
             print "      = $this_dst\n" if($DEBUG4);
 
-            ## ip2geo
-            my ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) = IPTool::ip2geo($this_dst);
-            $lat += 0; $lng += 0;
+            # ## ip2geo
+            # my ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) = IPTool::ip2geo($this_dst);
+            # $lat += 0; $lng += 0;
 
-            print "        geo: ".join("|", ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) )."\n" if($DEBUG4);
+            # print "        geo: ".join("|", ($ret_ip, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code) )."\n" if($DEBUG4);
             
-            ## ip2as
-            my $format = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H-%M-%S %Z' );
-            my ($asn, $tmp2, $bgp_prefix, $country, $registry) = IPTool::ip2asn($this_dst, $format->format_datetime($pkt_dt));
-            print "        as: ".join("|", ($asn, $bgp_prefix, $country, $registry))."\n" if($DEBUG4);
+            # ## ip2as
+            # my $format = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H-%M-%S %Z' );
+            # my ($asn, $tmp2, $bgp_prefix, $country, $registry) = IPTool::ip2asn($this_dst, $format->format_datetime($pkt_dt));
+            # print "        as: ".join("|", ($asn, $bgp_prefix, $country, $registry))."\n" if($DEBUG4);
 
 
-            ## check if this IP is valid
-            if($lat != 0 and $lng != 0 and $asn ne "NA") {
+            # ## check if this IP is valid
+            # if($lat != 0 and $lng != 0 and $asn ne "NA") {
+            #     $valid = 1;
+            #     ($dst_ip, $dst_country_code, $dst_country_name, $dst_region_code, $dst_region_name, $dst_city, $dst_zip, $dst_lat, $dst_lng, $dst_metro_code, $dst_area_code, $dst_asn, $dst_bgp_prefix, $dst_registry) = ($this_dst, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code, $asn+0, $bgp_prefix, $registry);
+            # }
+            # else {
+            #     $ip_info{IP}{$this_dst}{INVALID} = 1;
+            # }
+
+            if(exists $ip_table_info{IP}{$this_dst}) {
                 $valid = 1;
-                ($dst_ip, $dst_country_code, $dst_country_name, $dst_region_code, $dst_region_name, $dst_city, $dst_zip, $dst_lat, $dst_lng, $dst_metro_code, $dst_area_code, $dst_asn, $dst_bgp_prefix, $dst_registry) = ($this_dst, $country_code, $country_name, $region_code, $region_name, $city, $zip, $lat, $lng, $metro_code, $area_code, $asn+0, $bgp_prefix, $registry);
+                ($dst_ip, $dst_lat, $dst_lng, $dst_asn, $dst_bgp_prefix, $dst_country_code, $dst_country_name, $dst_region_code, $dst_region_name, $dst_city, $dst_zip, $dst_area_code, $dst_metro_code, $dst_registry) = ($this_dst, $ip_table_info{IP}{$this_dst}{LAT}, $ip_table_info{IP}{$this_dst}{LNG}, $ip_table_info{IP}{$this_dst}{ASN}, $ip_table_info{IP}{$this_dst}{BGP_PREFIX}, $ip_table_info{IP}{$this_dst}{COUNTRY_CODE}, $ip_table_info{IP}{$this_dst}{COUNTRY_NAME}, $ip_table_info{IP}{$this_dst}{REGION_CODE}, $ip_table_info{IP}{$this_dst}{REGION_NAME}, $ip_table_info{IP}{$this_dst}{CITY}, $ip_table_info{IP}{$this_dst}{ZIP}, $ip_table_info{IP}{$this_dst}{AREA}, $ip_table_info{IP}{$this_dst}{METRO}, $ip_table_info{IP}{$this_dst}{REGISTRY});
+                last;
             }
             else {
                 $ip_info{IP}{$this_dst}{INVALID} = 1;
