@@ -74,7 +74,7 @@ if(@ARGV != 0) {
 #############
 # read geo asn table
 #############
-if($READ_TABLE) {
+if($READ_TABLE and -e "$table_dir/$table_file") {
     print "read geo asn table\n" if($DEBUG2);
 
     open FH, "$table_dir/$table_file" or die $!;
@@ -121,7 +121,7 @@ if($READ_TABLE) {
 #############
 # read invalid IPs
 #############
-if($READ_INVALID) {
+if($READ_INVALID and -e "$invalid_dir/$invalid_file") {
     print "read invalid IPs\n" if($DEBUG2);
 
     open FH, "$invalid_dir/$invalid_file" or die $!;
@@ -142,7 +142,7 @@ if($READ_INVALID) {
 #############
 ## read ip_info.txt
 #############
-if($READ_SUMMARY) {
+if($READ_SUMMARY and -e "$sum_ip_dir/$sum_ip_info") {
     print "read summary of ip info\n" if($DEBUG2);
 
     open FH, "$sum_ip_dir/$sum_ip_info" or die $!;
@@ -194,7 +194,7 @@ if($READ_SUMMARY) {
 #############
 ## read ips
 #############
-if($READ_IPS) {
+if($READ_IPS and -e "$ips_dir/$ips_file") {
     print "read ips\n" if($DEBUG2);
 
     open FH, "$ips_dir/$ips_file" or die $!;

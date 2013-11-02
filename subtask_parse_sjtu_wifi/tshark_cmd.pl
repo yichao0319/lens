@@ -5,10 +5,10 @@
 ## 2013.10.07 @ UT Austin
 ##
 ## - input:
-##   1. matrix_type:
-##      a) OD: OD traffic matrix
 ##
 ## - output:
+##   bz2 file w/ format:
+##      <frame num> <time> <mac src> <mac dst> <frame length> <ip src> <ip dst>
 ##
 ## - e.g.
 ##     perl tshark_cmd.pl OD
@@ -64,21 +64,36 @@ if(0) {
 #############
 my $input_dir = "../data/sjtu_wifi/pcap";
 my $output_dir = "../processed_data/subtask_parse_sjtu_wifi/text";
-my $matrix_type;
+# my $matrix_type;
 
 
 #############
 # check input
 #############
-if(@ARGV != 1) {
+if(@ARGV != 0) {
     print "wrong number of input: ".@ARGV."\n";
     exit;
 }
-$matrix_type = $ARGV[0];
+# $matrix_type = $ARGV[0];
 
 
 #############
 # Main starts
+#############
+
+#############
+# check if directories exist
+#############
+unless(-e $input_dir) {
+    die "pcap trace directory does not exist: $input_dir\n";
+}
+unless(-e $output_dir) {
+    die "output directory does not exist: $output_dir\n";
+}
+
+
+#############
+# Search all pcap traces
 #############
 
 my @files;
@@ -86,6 +101,7 @@ opendir(DIR, "$input_dir") or die $!;
 while (my $file = readdir(DIR)) {
     next if($file =~ /^\.+/);  ## don't show "." and ".."
     next if(-d "$input_dir/$file");  ## don't show directories
+    next if(-e "$output_dir/$file.txt.bz");  ## ignore those have been processed
 
     # print "$file\n";
     push(@files, $file);
@@ -112,3 +128,5 @@ foreach my $file (sort {$a cmp $b} @files) {
     # last;
 }
 
+my $cmd = "bzip2 $output_dir/*.txt";
+`$cmd`;

@@ -1,0 +1,15 @@
+steps:
+1. tshark_cmd.pl
+     parse pcap traces
+2. retrieve_all_ip.pl
+     get all IP adresses in the traces
+3. update_geo_asn_table.pl
+     update IP to GEO and AS table
+4. summarize_geo_asn_table.pl
+     gather multiple tables from above and generate 1 single table
+5. sort_ips.pl
+     sort and group IPs accordingly
+6. gen_tm.pl
+     according to the sorting result, generate TM
+
+

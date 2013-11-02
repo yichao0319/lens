@@ -25,7 +25,8 @@
 ## - output:
 ##
 ## - e.g.
-##      perl sort_ips.pl -sjtu gps -other gps -res 0.01
+##      perl sort_ips.pl -sjtu ap -other country
+##      perl sort_ips.pl -sjtu ap -other gps -res 0.05
 ##
 ##########################################
 
@@ -66,7 +67,7 @@ my $table_file   = "ip_geo_as_table.txt";
 my $invalid_file = "ip_geo_as_invalid.txt";
 my $all_ips_file = "all_ips.txt";
 my $ap_file      = "AP_Location.csv";
-
+my $output_name  = "sort_ips";
 
 my $sjtu;
 my $other;
@@ -83,6 +84,8 @@ my %group_info = ();
 
 my $cnt_sjtu = 0;
 my $cnt_missing_sjtu = 0;
+my $cnt_missing_sjtu_ap = 0;
+my $cnt_missing_other = 0;
 
 
 #############
@@ -148,9 +151,9 @@ close FH;
 
 
 #############
-## get all ips
+## get all groups
 #############
-print "get all ips\n" if($DEBUG2);
+print "get all groups\n" if($DEBUG2);
 
 open FH, "$all_ips_dir/$all_ips_file" or die $!;
 while(<FH>) {
@@ -183,11 +186,29 @@ while(<FH>) {
             my $group = "".(int($lat / $res)).";".(int($lng / $res));
             print "($lat, $lng) = $group\n" if($DEBUG0);
 
-            $group_info{START_GRP} = $group unless(exists $group_info{START_GRP});
-            $group_info{GROUP}{$group}{LAT} = $lat;
-            $group_info{GROUP}{$group}{LNG} = $lng;
+            # $group_info{START_GRP} = $group unless(exists $group_info{START_GRP});
+            $group_info{SJTU_GROUP}{$group}{LAT} = $lat;
+            $group_info{SJTU_GROUP}{$group}{LNG} = $lng;
+        }
+        elsif($sjtu eq "ap") {
+            my $ap_mac = $account_info{USER_IP}{$ip}{AP_MAC};
+            unless(exists $ap_info{AP_MAC}{$ap_mac}) {
+                ## cannot find the corresponding AP Name
+                $cnt_missing_sjtu_ap ++;
+                next;
+            }
+
+            my $ap_name = $ap_info{AP_MAC}{$ap_mac}{AP_NAME};
+            my $group = $ap_name;
+
+            # $group_info{START_GRP} = $group unless(exists $group_info{START_GRP});
+            $group_info{SJTU_GROUP}{$group}{IND} = 0;
         }
     }
+
+    ###################
+    ## other machines
+    ###################
     else {
 
         ## this IP is supposed to be SJTU machine but cannot find it in Account info
@@ -202,40 +223,62 @@ while(<FH>) {
             my $group = "".(int($lat / $res)).";".(int($lng / $res));
             print "($lat, $lng) = $group\n" if($DEBUG0);
 
-            $group_info{GROUP}{$group}{LAT} = $lat;
-            $group_info{GROUP}{$group}{LNG} = $lng;
+            $group_info{OTHER_GROUP}{$group}{LAT} = $lat;
+            $group_info{OTHER_GROUP}{$group}{LNG} = $lng;
+        }
+        elsif($other eq "country") {
+            my $group = $ip_info{IP}{$ip}{COUNTRY_CODE};
+            if($group eq "") {
+                ## does not have country code
+                $cnt_missing_other ++;
+                next;
+            }
+
+            next if(exists $group_info{OTHER_GROUP}{$group});
+            my $lat = $ip_info{IP}{$ip}{LAT} + 0;
+            my $lng = $ip_info{IP}{$ip}{LNG} + 0;
+            $group_info{OTHER_GROUP}{$group}{LAT} = $lat;
+            $group_info{OTHER_GROUP}{$group}{LNG} = $lng;
         }
     }
 }
 close FH;
 
 
-print "# sjtu devices: $cnt_sjtu\n";
-print "# sjtu missing devices: $cnt_missing_sjtu\n";
-print "# group: ".scalar(keys %{ $group_info{GROUP} } )."\n";
+print "  # sjtu devices: $cnt_sjtu\n";
+print "  # sjtu missing devices: $cnt_missing_sjtu\n";
+print "  # sjtu missing ap: $cnt_missing_sjtu_ap\n";
+print "  # other missing devices: $cnt_missing_other\n";
+print "  # sjtu group: ".scalar(keys %{ $group_info{SJTU_GROUP} } )."\n";
+print "  # other group: ".scalar(keys %{ $group_info{OTHER_GROUP} } )."\n";
 
 
 ################
-## start to sort
+## sort SJTU group
 ################
+print "sort SJTU group\n" if($DEBUG2);
+
 my $cur_ind = 1;
+my $cur_lat = -1;
+my $cur_lng = -1;
 if($sjtu eq "gps") {
-    my @tmp_grps = keys %{ $group_info{GROUP} };
+    $output_name .= ".$sjtu.$res";
 
-    my $cur_grp = $group_info{START_GRP};
-    my $cur_lat = $group_info{GROUP}{$cur_grp}{LAT};
-    my $cur_lng = $group_info{GROUP}{$cur_grp}{LNG};
-    $group_info{GROUP}{$cur_grp}{IND} = $cur_ind;
+    my @tmp_grps = keys %{ $group_info{SJTU_GROUP} };
 
-    @tmp_grps = grep { $_ != $cur_grp } @tmp_grps;
+    my $cur_grp = shift @tmp_grps;
+    $cur_lat = $group_info{SJTU_GROUP}{$cur_grp}{LAT};
+    $cur_lng = $group_info{SJTU_GROUP}{$cur_grp}{LNG};
+    $group_info{SJTU_GROUP}{$cur_grp}{IND} = $cur_ind;
+    $cur_ind ++;
 
     while(scalar(@tmp_grps) > 0) {
         
         my $min_dist = -1;
         my $min_grp;
         foreach my $this_grp (@tmp_grps) {
-            my $this_lat = $group_info{GROUP}{$this_grp}{LAT};
-            my $this_lng = $group_info{GROUP}{$this_grp}{LNG};
+            my $this_lat = $group_info{SJTU_GROUP}{$this_grp}{LAT};
+            my $this_lng = $group_info{SJTU_GROUP}{$this_grp}{LNG};
 
             my $this_dist = MyUtil::pos2dist($cur_lat, $cur_lng, $this_lat, $this_lng);
             if($this_dist < $min_dist or $min_dist == -1) {
@@ -244,33 +287,133 @@ if($sjtu eq "gps") {
             }
         }
 
-        @tmp_grps = grep { $_ != $min_grp } @tmp_grps;
+        @tmp_grps = grep { $_ ne $min_grp } @tmp_grps;
         $cur_grp = $min_grp;
-        $cur_lat = $group_info{GROUP}{$min_grp}{LAT};
-        $cur_lng = $group_info{GROUP}{$min_grp}{LNG};
+        $cur_lat = $group_info{SJTU_GROUP}{$min_grp}{LAT};
+        $cur_lng = $group_info{SJTU_GROUP}{$min_grp}{LNG};
 
+        $group_info{SJTU_GROUP}{$cur_grp}{IND} = $cur_ind;
         $cur_ind ++;
-        $group_info{GROUP}{$cur_grp}{IND} = $cur_ind;
+    }
+}
+elsif($sjtu eq "ap") {
+    $output_name .= ".$sjtu";
+
+    my @tmp_grps = keys %{ $group_info{SJTU_GROUP} };
+
+    my @sorted_tmp_grps = sort {$a cmp $b} @tmp_grps;
+    foreach my $this_grp (@sorted_tmp_grps) {
+        $group_info{SJTU_GROUP}{$this_grp}{IND} = $cur_ind;
+        $cur_ind ++;
     }
 }
 
 
-
 ################
-## output ip => index (start from 1)
+## sort other group
 ################
-if($sjtu eq "gps") {
-    open FH, "> $output_dir/sort_ips.$sjtu.$other.$res.txt" or die $!;
-    foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
-        my $lat = $ip_info{IP}{$ip}{LAT} + 0;
-        my $lng = $ip_info{IP}{$ip}{LNG} + 0;
+print "sort other group\n" if($DEBUG2);
 
-        my $group = "".(int($lat / $res)).";".(int($lng / $res));
-        my $index = $group_info{GROUP}{$group}{IND};
-
-        print FH "$ip, $index\n";
+if($other eq "gps" or $other eq "country") {
+    if($other eq "gps") {
+        $output_name .= ".$other.$res";
     }
-    close FH;
+    elsif($other eq "country") {
+        $output_name .= ".$other";
+    }
+
+    my @tmp_grps = keys %{ $group_info{OTHER_GROUP} };
+
+    my $cur_grp;
+    if($cur_lat == -1 and $cur_lng == -1) {
+        $cur_grp = shift @tmp_grps;
+        $cur_lat = $group_info{OTHER_GROUP}{$cur_grp}{LAT};
+        $cur_lng = $group_info{OTHER_GROUP}{$cur_grp}{LNG};
+        $group_info{OTHER_GROUP}{$cur_grp}{IND} = $cur_ind;
+        $cur_ind ++;
+    }
+
+    while(scalar(@tmp_grps) > 0) {
+        
+        my $min_dist = -1;
+        my $min_grp;
+        foreach my $this_grp (@tmp_grps) {
+            my $this_lat = $group_info{OTHER_GROUP}{$this_grp}{LAT};
+            my $this_lng = $group_info{OTHER_GROUP}{$this_grp}{LNG};
+
+            my $this_dist = MyUtil::pos2dist($cur_lat, $cur_lng, $this_lat, $this_lng);
+            if($this_dist < $min_dist or $min_dist == -1) {
+                $min_dist = $this_dist;
+                $min_grp = $this_grp;
+            }
+        }
+
+        @tmp_grps = grep { $_ ne $min_grp } @tmp_grps;
+        $cur_grp = $min_grp;
+        $cur_lat = $group_info{OTHER_GROUP}{$min_grp}{LAT};
+        $cur_lng = $group_info{OTHER_GROUP}{$min_grp}{LNG};
+
+        $group_info{OTHER_GROUP}{$cur_grp}{IND} = $cur_ind;
+        $cur_ind ++;
+    }
 }
 
+
+################
+## map sjtu ips to grou
+################
+print "map sjtu ips to grou\n" if($DEBUG2);
+
+open FH, "> $output_dir/$output_name.txt" or die $!;
+foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
+    ###################
+    ## SJTU machines
+    ###################
+    if(exists $account_info{USER_IP}{$ip}) {
+        if($sjtu eq "gps") {
+            my $lat = $ip_info{IP}{$ip}{LAT} + 0;
+            my $lng = $ip_info{IP}{$ip}{LNG} + 0;
+
+            my $group = "".(int($lat / $res)).";".(int($lng / $res));
+            die "wrong sjtu-gps group name: $group\n" unless(exists $group_info{SJTU_GROUP}{$group});
+
+            my $index = $group_info{SJTU_GROUP}{$group}{IND};
+            print FH "$ip, $index\n";
+        }
+        elsif($sjtu eq "ap") {
+            my $ap_mac = $account_info{USER_IP}{$ip}{AP_MAC};
+            next unless(exists $ap_info{AP_MAC}{$ap_mac});
+
+            my $ap_name = $ap_info{AP_MAC}{$ap_mac}{AP_NAME};
+            my $group = $ap_name;
+            die "wrong sjtu-ap group name: $group\n" unless(exists $group_info{SJTU_GROUP}{$group});
+
+            my $index = $group_info{SJTU_GROUP}{$group}{IND};
+            print FH "$ip, $index\n";
+        }
+    }
+    ###################
+    ## other machines
+    ###################
+    else {
+        if($other eq "gps") {
+            my $lat = $ip_info{IP}{$ip}{LAT} + 0;
+            my $lng = $ip_info{IP}{$ip}{LNG} + 0;
+
+            my $group = "".(int($lat / $res)).";".(int($lng / $res));
+            die "wrong other-gps group name: $group\n" unless(exists $group_info{OTHER_GROUP}{$group});
+
+            my $index = $group_info{OTHER_GROUP}{$group}{IND};
+            print FH "$ip, $index\n";
+        }
+        elsif($other eq "country") {
+            my $group = $ip_info{IP}{$ip}{COUNTRY_CODE};
+            next if($group eq "");
+
+            my $index = $group_info{OTHER_GROUP}{$group}{IND};
+            print FH "$ip, $index\n";
+        }
+    }
+}
+close FH;
 
