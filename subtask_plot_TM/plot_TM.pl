@@ -44,6 +44,7 @@ my %period_max_value = ();
 #############
 if(@ARGV != 2) {
     print "wrong number of input: ".@ARGV."\n";
+    print "e.g. \nperl plot_TM.pl ../processed_data/subtask_parse_sjtu_wifi/tm/tm.sort_ips.ap.country.txt.3600 600\n";
     exit;
 }
 $tm_fullpath = $ARGV[0];
@@ -121,7 +122,7 @@ while (my $file = readdir(DIR)) {
     $escaped_tm_dir =~ s{\/}{\\\/}g;
     my $escaped_fig_dir = $figure_dir."/";
     $escaped_fig_dir =~ s{\/}{\\\/}g;
-    my $cmd = "sed 's/DATA_DIR/$escaped_tm_dir/g; s/FIG_DIR/$escaped_fig_dir/g; s/FILE_NAME/tmp.$file/g; s/FIG_NAME/tmp.$file/g; s/X_LABEL/src/g; s/Y_LABEL/dst/g; s/DEGREE/-45/g; s/X_RANGE_S/0/g; s/X_RANGE_E/$min_size/g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/$min_size/g; s/CBRANGE_S/0/g; s/CBRANGE_E/50/g; s/CBLABEL//g; ' plot_TM.mother.plot > tmp.plot_TM.plot";
+    my $cmd = "sed 's/DATA_DIR/$escaped_tm_dir/g; s/FIG_DIR/$escaped_fig_dir/g; s/FILE_NAME/tmp.$file/g; s/FIG_NAME/tmp.$file/g; s/X_LABEL/src/g; s/Y_LABEL/dst/g; s/DEGREE/-45/g; s/X_RANGE_S/0/g; s/X_RANGE_E/$min_size/g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/$min_size/g; s/CBRANGE_S/0/g; s/CBRANGE_E/1000/g; s/CBLABEL//g; ' plot_TM.mother.plot > tmp.plot_TM.plot";
     `$cmd`;
 
     $cmd = "gnuplot tmp.plot_TM.plot";
