@@ -258,6 +258,5 @@ sub write_tm {
         }
         print FH "\n";
     }
-    print FH "\n";
     close FH;
 }
