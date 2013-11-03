@@ -7,9 +7,10 @@
 ## - Input:
 ##   1. tm_fullpath
 ##   2. matrix_size
+##   3. max_color
 ##
 ## - e.g.
-##   perl plot_TM.pl ../processed_data/subtask_parse_sjtu_wifi/tm/tm.sort_ips.ap.country.txt.3600 600
+##   perl plot_TM.pl ../processed_data/subtask_parse_sjtu_wifi/tm/tm.sort_ips.ap.country.txt.3600 600 2000
 ##
 ######################################################
 
@@ -31,20 +32,21 @@ my $DEBUG2 = 1;
 my $figure_dir = "../processed_data/subtask_plot_TM/figures_tm";
 
 my $tm_fullpath;
+my $matrix_size;
+my $max_color;
 
 my $tm_file;
 my $tm_dir;
 
-my $matrix_size;
 my %period_max_value = ();
 
 
 #############
 # check input
 #############
-if(@ARGV != 2) {
+if(@ARGV != 3) {
     print "wrong number of input: ".@ARGV."\n";
-    print "e.g. \nperl plot_TM.pl ../processed_data/subtask_parse_sjtu_wifi/tm/tm.sort_ips.ap.country.txt.3600 600\n";
+    print "e.g. \nperl plot_TM.pl ../processed_data/subtask_parse_sjtu_wifi/tm/tm.sort_ips.ap.country.txt.3600 600 2000\n";
     exit;
 }
 $tm_fullpath = $ARGV[0];
@@ -53,11 +55,13 @@ if($tm_fullpath =~ /^(.*)\/(.*)$/) {
     $tm_file = $2;
 }
 $matrix_size = $ARGV[1] + 0;
+$max_color   = $ARGV[2] + 0;
 
 if($DEBUG2) {
     print "tm dir: $tm_dir\n";
     print "tm file: $tm_file\n";
     print "matrix size: $matrix_size\n";
+    print "max color value: $max_color\n";
 }
 
 
@@ -116,13 +120,14 @@ while (my $file = readdir(DIR)) {
     }
     close FH_W;
     close FH;
+    print "  size = $min_size\n" if($DEBUG1);
 
 
     my $escaped_tm_dir = $tm_dir."/";
     $escaped_tm_dir =~ s{\/}{\\\/}g;
     my $escaped_fig_dir = $figure_dir."/";
     $escaped_fig_dir =~ s{\/}{\\\/}g;
-    my $cmd = "sed 's/DATA_DIR/$escaped_tm_dir/g; s/FIG_DIR/$escaped_fig_dir/g; s/FILE_NAME/tmp.$file/g; s/FIG_NAME/tmp.$file/g; s/X_LABEL/src/g; s/Y_LABEL/dst/g; s/DEGREE/-45/g; s/X_RANGE_S/0/g; s/X_RANGE_E/$min_size/g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/$min_size/g; s/CBRANGE_S/0/g; s/CBRANGE_E/1000/g; s/CBLABEL//g; ' plot_TM.mother.plot > tmp.plot_TM.plot";
+    my $cmd = "sed 's/DATA_DIR/$escaped_tm_dir/g; s/FIG_DIR/$escaped_fig_dir/g; s/FILE_NAME/$file/g; s/FIG_NAME/$file/g; s/X_LABEL/src/g; s/Y_LABEL/dst/g; s/DEGREE/-45/g; s/X_RANGE_S/0/g; s/X_RANGE_E/$min_size-1/g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/$min_size-1/g; s/CBRANGE_S/0/g; s/CBRANGE_E/$max_color/g; s/CBLABEL//g; ' plot_TM.mother.plot > tmp.plot_TM.plot";
     `$cmd`;
 
     $cmd = "gnuplot tmp.plot_TM.plot";
