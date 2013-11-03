@@ -1,3 +1,0 @@
-#!/bin/bash
-
-matlab -r "[mse, mae, cc] = smrf_based_pred('FILENAME', NUM_FRAMES, WIDTH, HEIGHT, GROUP_SIZE, RANK, OPT_SWAP_MAT, OPT_TYPE, LOSS_RATE, SEED); fh = fopen(['/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/output/smrf_based_pred.FILENAME.NUM_FRAMES.WIDTH.HEIGHT.GROUP_SIZE.RANK.OPT_SWAP_MAT.OPT_TYPE.LOSS_RATE.SEED.txt'], 'w'); fprintf(fh, '%f, %f, %f\n', mse, mae, cc); fclose(fh); exit;"

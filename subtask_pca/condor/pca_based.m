@@ -15,10 +15,10 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = pca_based('TM_Airport_period5_.exp0.', 12, 300, 300, 30, 30, 50, 50, 2, 0)
+%%     [tp, tn, fp, fn, precision, recall, f1score] = pca_based('/u/yichao/anomaly_compression/condor_data/subtask_inject_error/TM_err/', 'TM_Airport_period5_.exp0.', 12, 300, 300, 30, 30, 50, 50, 2, 0)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [tp, tn, fp, fn, precision, recall, f1score] = pca_based(filename, num_frames, width, height, block_width, block_height, r, thresh, option_dect, option_swap_mat)
+function [tp, tn, fp, fn, precision, recall, f1score] = pca_based(input_TM_dir, filename, num_frames, width, height, block_width, block_height, r, thresh, option_dect, option_swap_mat)
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils');
 
@@ -46,7 +46,7 @@ function [tp, tn, fp, fn, precision, recall, f1score] = pca_based(filename, num_
     %% Variable
     %% --------------------
     % input_TM_dir  = '../processed_data/subtask_process_4sq/TM/';
-    input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/TM_err/';
+    % input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/TM_err/';
     input_errs_dir = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/errs/';
     input_4sq_dir  = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
     % output_dir = '../processed_data/subtask_mpeg/output/';
@@ -162,10 +162,10 @@ function [tp, tn, fp, fn, precision, recall, f1score] = pca_based(filename, num_
 
         for w = [1:num_blocks(1)]
             w_s = (w-1)*block_width + 1;
-            w_e = w*block_width;
+            w_e = min(w*block_width, width);
             for h = [1:num_blocks(2)]
                 h_s = (h-1)*block_height + 1;
-                h_e = h*block_height;
+                h_e = min(h*block_height, height);
                 if DEBUG3, fprintf('  block: [%d,%d]\n', w, h); end
                 
                 this_block = data(w_s:w_e, h_s:h_e, frame);
@@ -212,78 +212,6 @@ function [tp, tn, fp, fn, precision, recall, f1score] = pca_based(filename, num_
     f1score = 2 * precision * recall / (precision + recall);
 end
 
-
-
-function [w2s, h2s] = find_block_ind(w, h, num_blocks, blocks)
-    % fprintf('find block ind: w=%d, h=%d, nw=%d, nh=%d, blocks=%d', w, h, num_blocks, blocks);
-    
-    if blocks == -1
-        w2s = [1:num_blocks(1)];
-        h2s = [1:num_blocks(2)];
-        return;
-    else
-        if blocks >= 0
-            w2s = [w];
-            h2s = [h];
-        end
-
-        if blocks >= 1
-            if w > 1
-                w2s = [w2s, w-1];
-                h2s = [h2s, h];
-            end
-        end
-
-        if blocks >= 2
-            if h < num_blocks(2)
-                w2s = [w2s, w];
-                h2s = [h2s, h+1];
-            end
-        end
-
-        if blocks >= 3
-            if w < num_blocks(1)
-                w2s = [w2s, w+1];
-                h2s = [h2s, h];
-            end
-        end
-
-        if blocks >= 4
-            if h > 1
-                w2s = [w2s, w];
-                h2s = [h2s, h-1];
-            end
-        end
-
-        if blocks >= 5
-            if w > 1 & h < num_blocks(2)
-                w2s = [w2s, w-1];
-                h2s = [h2s, h+1];
-            end
-        end
-
-        if blocks >= 6
-            if w < num_blocks(1) & h < num_blocks(2)
-                w2s = [w2s, w+1];
-                h2s = [h2s, h+1];
-            end
-        end
-
-        if blocks >= 7
-            if w < num_blocks(1) & h > 1
-                w2s = [w2s, w+1];
-                h2s = [h2s, h-1];
-            end
-        end
-
-        if blocks >= 8
-            if w > 1 & h > 1
-                w2s = [w2s, w-1];
-                h2s = [h2s, h-1];
-            end
-        end
-    end
-end
 
 
 %% -------------------------------------

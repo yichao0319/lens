@@ -15,10 +15,10 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = dct_based('TM_Airport_period5_.exp0.', 12, 300, 300, 4, 50, 0, 0, 50, 50, 10, 20)
+%%     [tp, tn, fp, fn, precision, recall, f1score] = dct_based('../processed_data/subtask_inject_error/TM_err/', 'TM_Airport_period5_.exp0.', 12, 300, 300, 4, 50, 0, 0, 50, 50, 10, 20)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_frames, width, height, group_size, thresh, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization)
+function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(input_TM_dir, filename, num_frames, width, height, group_size, thresh, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization)
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -47,7 +47,7 @@ function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_
     %% Variable
     %% --------------------
     % input_TM_dir  = '../processed_data/subtask_process_4sq/TM/';
-    input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
+    % input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
     input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
     input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
 
@@ -172,11 +172,11 @@ function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_
             err_bit_map = zeros(num_chunks(1), num_chunks(2), group_size);
             for w = 1:num_chunks(1)
                 w_s = (w-1)*chunk_width + 1;
-                w_e = w*chunk_width;
+                w_e = min(w*chunk_width, width);
                 
                 for h = 1:num_chunks(2)
                     h_s = (h-1)*chunk_height + 1;
-                    h_e = h*chunk_height;
+                    h_e = min(h*chunk_height, height);
 
                     for f = 1:size(this_group, 3)
                         tmp = this_group_dct;
@@ -199,9 +199,9 @@ function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_
                 if DEBUG0, fprintf('%d [%d, %d, %d], err = %f (%f)\n', err_ind_sort(selected_ind), w, h, f, err_bit_map(err_ind_sort(selected_ind)), err_sort(selected_ind)); end
 
                 w_s = (w-1)*chunk_width + 1;
-                w_e = w*chunk_width;
+                w_e = min(w*chunk_width, width);
                 h_s = (h-1)*chunk_height + 1;
-                h_e = h*chunk_height;
+                h_e = min(h*chunk_height, height);
                 est_group_dct(w_s:w_e, h_s:h_e, f) = this_group_dct(w_s:w_e, h_s:h_e, f);
             end
 

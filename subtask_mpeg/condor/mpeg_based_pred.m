@@ -31,10 +31,11 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc] = mpeg_based_pred('TM_Airport_period5_', 12, 300, 300, 30, 30, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 0, 0.001, 1)
+%%     [mse, mae, cc] = mpeg_based_pred('../processed_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 30, 30, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 0, 0.001, 1)
+%%     [mse, mae, cc] = mpeg_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm.sort_ips.ap.country.txt.3600.', 8, 346, 346, 100, 100, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 0, 0.001, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc] = mpeg_based_pred(filename, num_frames, width, height, block_width, block_height, option_delta, option_frames, option_blocks, option_swap_mat, loss_rate, seed)
+function [mse, mae, cc] = mpeg_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, option_delta, option_frames, option_blocks, option_swap_mat, loss_rate, seed)
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils');
 
@@ -62,8 +63,9 @@ function [mse, mae, cc] = mpeg_based_pred(filename, num_frames, width, height, b
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
-    input_errs_dir = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/errs/';
+    % input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
+    % input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_parse_sjtu_wifi/tm/';
+    % input_errs_dir = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/errs/';
     input_4sq_dir  = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
 
 
@@ -169,14 +171,16 @@ function [mse, mae, cc] = mpeg_based_pred(filename, num_frames, width, height, b
 
         for w = [1:num_blocks(1)]
             w_s = (w-1)*block_width + 1;
-            w_e = w*block_width;
+            w_e = min(w*block_width, width);
             for h = [1:num_blocks(2)]
                 h_s = (h-1)*block_height + 1;
-                h_e = h*block_height;
+                h_e = min(h*block_height, height);
                 if DEBUG3, fprintf('  block: [%d,%d]\n', w, h); end
                 
-                this_block = data(w_s:w_e, h_s:h_e, frame);
-                this_block_M = M(w_s:w_e, h_s:h_e, frame);
+                this_block = zeros(block_width, block_height);
+                this_block(1:(w_e-w_s+1), 1:(h_e-h_s+1)) = data(w_s:w_e, h_s:h_e, frame);
+                this_block_M = zeros(block_width, block_height);
+                this_block_M(1:(w_e-w_s+1), 1:(h_e-h_s+1)) = M(w_s:w_e, h_s:h_e, frame);
                 meanX2 = mean(reshape(this_block(this_block_M==1), [], 1).^2);
                 meanX = mean(reshape(this_block(this_block_M==1), [], 1));
 
@@ -201,11 +205,11 @@ function [mse, mae, cc] = mpeg_based_pred(filename, num_frames, width, height, b
                     for ind2 = [1:length(w2s)]
                         w2 = w2s(ind2);
                         w2_s = (w2-1)*block_width + 1;
-                        w2_e = w2*block_width;
+                        w2_e = min(w2*block_width, width);
 
                         h2 = h2s(ind2);
                         h2_s = (h2-1)*block_height + 1;
-                        h2_e = h2*block_height;
+                        h2_e = min(h2*block_height, height);
 
                         if (comp_frame == frame) & (w2 == w) & (h2 == h)
                             continue;
@@ -215,7 +219,8 @@ function [mse, mae, cc] = mpeg_based_pred(filename, num_frames, width, height, b
                             fprintf('    - f%d blocks [%d,%d], w=%d-%d, h=%d-%d\n', comp_frame, w2, h2, w2_s, w2_e, h2_s, h2_e);
                         end
 
-                        prev_block = compared_data(w2_s:w2_e, h2_s:h2_e, comp_frame);
+                        prev_block = zeros(block_width, block_height);
+                        prev_block(1:(w2_e-w2_s+1), 1:(h2_e-h2_s+1)) = compared_data(w2_s:w2_e, h2_s:h2_e, comp_frame);
                         
                         delta = prev_block(this_block_M==1) - this_block(this_block_M==1);
 
@@ -251,7 +256,7 @@ function [mse, mae, cc] = mpeg_based_pred(filename, num_frames, width, height, b
                 %% update the missing elements of this_block in compared_data
                 tmp = this_block;
                 tmp(~this_block_M) = min_delta_block(~this_block_M);
-                compared_data(w_s:w_e, h_s:h_e, frame) = tmp;
+                compared_data(w_s:w_e, h_s:h_e, frame) = tmp(1:(w_e-w_s+1), 1:(h_e-h_s+1));
             end
         end
     end

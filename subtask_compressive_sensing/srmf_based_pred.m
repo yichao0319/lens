@@ -15,10 +15,10 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = smrf_based('TM_Airport_period5_.exp0.', 12, 300, 300, 4, 5, 50, 0, 1)
+%%     [mse, mae, cc] = srmf_based_pred('../processed_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 4, 5, 0, 1, 0.001, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num_frames, width, height, group_size, r, thresh, option_swap_mat, option_type)
+function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, loss_rate, seed)
     addpath('../utils/mirt_dctn');
     addpath('../utils/compressive_sensing');
     addpath('../utils');
@@ -46,7 +46,7 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
+    % input_TM_dir   = '../processed_data/subtask_process_4sq/TM/';
     input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
     input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
     
@@ -55,35 +55,18 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
     %% --------------------
     %% Main starts
     %% --------------------
+    rand('seed', seed);
     num_groups = ceil(num_frames / group_size);
 
 
     %% --------------------
-    %% Read anomaly ground truth
-    %%  - row 1: index
-    %%  - row 2: anomaly value
     %% Read data matrix
     %% --------------------
-    if DEBUG2, fprintf('read anomalies\n'); end
+    if DEBUG2, fprintf('read data matrix\n'); end
 
     data = zeros(width, height, num_frames);
-    raw_gt_frame = cell(1, num_frames);
     for frame = [0:num_frames-1]
         if DEBUG0, fprintf('  frame %d\n', frame); end
-
-        this_err_file = [input_errs_dir filename int2str(frame) '.err.txt'];
-        if DEBUG0, fprintf('    file = %s\n', this_err_file); end
-
-        if frame == 0
-            ground_truth = load(this_err_file);
-            raw_gt_frame(frame+1) = {ground_truth(1, :)};
-        else
-            tmp = load(this_err_file);
-            raw_gt_frame(frame+1) = {tmp(1, :)};
-
-            tmp(1, :) = tmp(1, :) + frame * width * height;
-            ground_truth = [ground_truth, tmp];
-        end
 
         %% load data matrix
         this_matrix_file = [input_TM_dir filename int2str(frame) '.txt'];
@@ -91,6 +74,25 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
         
         tmp = load(this_matrix_file);
         data(:,:,frame+1) = tmp(1:width, 1:height);
+    end
+    sx = size(data(:,:,1));
+    nx = prod(sx);
+
+
+    %% --------------------
+    %% drop elements
+    %% --------------------
+    if DEBUG2, fprintf('drop elements\n'); end
+
+    M = ones(size(data));
+    num_missing = ceil(nx * loss_rate);
+    for f = [1:num_frames]
+        if DEBUG0, fprintf('  frame %d\n', f); end
+
+        ind = randperm(nx);
+        tmp = M(:,:,f);
+        tmp(ind(1:num_missing)) = 0;
+        M(:,:,f) = tmp;
     end
 
 
@@ -133,24 +135,18 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
     %% update the data matrix and ground truth according to the mapping
     for f = [1:num_frames]
         data(:,:,f) = map_matrix(data(:,:,f), mapping);
-
-        %% update ground truth
-        new_ind = find_mapping_ind(raw_gt_frame{f}, width, height, mapping);
-        if f == 1
-            gt_tmp = new_ind;
-        else
-            gt_tmp = [gt_tmp, (new_ind + (f-1) * width * height)];
-        end
+        M(:,:,f)    = map_matrix(M(:,:,f), mapping);
     end
 
-    ground_truth(1, :) = gt_tmp;
-
-    if DEBUG1, fprintf('  size of ground truth: %d, %d\n', size(ground_truth)); end
     if DEBUG1, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
     
 
+    compared_data = data;
+    compared_data(~M) = 0;
+
+
     %% --------------------
-    %% apply SMRF to each Group of Pictures (GoP)
+    %% apply SRMF to each Group of Pictures (GoP)
     %% --------------------
     for gop = 1:num_groups
         gop_s = (gop - 1) * group_size + 1;
@@ -158,7 +154,10 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
 
         if DEBUG1 == 0, fprintf('gop %d: frame %d-%d\n', gop, gop_s, gop_e); end
 
-        this_group = data(:, :, gop_s:gop_e);
+        this_group   = data(:, :, gop_s:gop_e);
+        this_group_M = M(:, :, gop_s:gop_e);
+
+        
 
         %% --------------------
         %  Compressive Sensing
@@ -166,51 +165,36 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
         this_rank = r; %min(r, rank(this_group));
         lambda = 0.01;
 
-        meanX2 = mean(this_group(:).^2);
-        meanX = mean(this_group(:));
+        % meanX2 = mean(this_group(:).^2);
+        % meanX = mean(this_group(:));
         sx = size(this_group);
         nx = prod(sx);
         n  = length(sx);
 
-        M = ones(sx);
-        [A, b] = XM2Ab(this_group, M);
+        [A, b] = XM2Ab(this_group, this_group_M);
 
         if option_type == 0
             %% baseline
             est_group = EstimateBaseline(A, b, sx);
         elseif option_type == 1
             %% SRMF
-            config = ConfigSRTF(A, b, this_group, M, sx, this_rank, this_rank, lambda, true);
-            [u4, v4, w4] = SRTF(this_group, this_rank, M, config, 1000, 100, 50);
+            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, lambda, true);
+            [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, 1000, 100, 50);
 
             est_group = tensorprod(u4, v4, w4);
             est_group = max(0, est_group);
         end
         
-        %% ------------
-        %% detect anomaly
-        err_ts = abs(this_group(:) - est_group(:));
-        this_group_err_ind = find(err_ts > thresh);
-        if gop == 1
-            detect_err_ind = this_group_err_ind;
-        else
-            detect_err_ind = [detect_err_ind; this_group_err_ind + (gop-1)*width*height*group_size];
-        end
-        if DEBUG1, fprintf('    size of detect err = %d, %d\n', size(detect_err_ind)); end
+        compared_data(:, :, gop_s:gop_e) = est_group;
     end
 
 
-    tps = intersect(ground_truth(1, :), detect_err_ind);
-    tp = size(tps, 2);
-    fps = setdiff(detect_err_ind, ground_truth(1, :));
-    fp = size(fps, 2);
-    fns = setdiff(ground_truth(1, :), detect_err_ind);
-    fn = size(fns, 2);
-    tn = size(err_ts(:, 1), 1) - tp - fp - fn;
-    
-    precision = tp / (tp + fp);
-    recall = tp / (tp + fn);
-    f1score = 2 * precision * recall / (precision + recall);
+    meanX2 = mean(data(:).^2);
+    meanX = mean(data(:));
+    mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
+    mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
+    cc  = corrcoef(data(~M),max(0,compared_data(~M)));
+    cc  = cc(1,2);
 end
 
 

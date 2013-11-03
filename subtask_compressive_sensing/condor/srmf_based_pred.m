@@ -15,10 +15,10 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc] = smrf_based_pred('TM_Airport_period5_', 12, 300, 300, 4, 5, 0, 1, 0.001, 1)
+%%     [mse, mae, cc] = srmf_based_pred('/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 4, 5, 0, 1, 0.001, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc] = smrf_based_pred(filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, loss_rate, seed)
+function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, loss_rate, seed)
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils/compressive_sensing');
     addpath('/u/yichao/anomaly_compression/utils');
@@ -46,7 +46,7 @@ function [mse, mae, cc] = smrf_based_pred(filename, num_frames, width, height, g
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
+    % input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
     input_errs_dir = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/errs/';
     input_4sq_dir  = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
     
@@ -146,7 +146,7 @@ function [mse, mae, cc] = smrf_based_pred(filename, num_frames, width, height, g
 
 
     %% --------------------
-    %% apply SMRF to each Group of Pictures (GoP)
+    %% apply SRMF to each Group of Pictures (GoP)
     %% --------------------
     for gop = 1:num_groups
         gop_s = (gop - 1) * group_size + 1;

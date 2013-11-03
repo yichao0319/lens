@@ -15,10 +15,10 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc] = dct_based_pred('TM_Airport_period5_', 12, 300, 300, 4, 0, 0, 50, 50, 10, 20, 0.001, 1)
+%%     [mse, mae, cc] = dct_based_pred('../processed_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 4, 0, 0, 50, 50, 10, 20, 0.001, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc] = dct_based_pred(filename, num_frames, width, height, group_size, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization, loss_rate, seed)
+function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization, loss_rate, seed)
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -46,7 +46,7 @@ function [mse, mae, cc] = dct_based_pred(filename, num_frames, width, height, gr
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '../processed_data/subtask_process_4sq/TM/';
+    % input_TM_dir   = '../processed_data/subtask_process_4sq/TM/';
     % input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
     input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
     input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
@@ -171,11 +171,11 @@ function [mse, mae, cc] = dct_based_pred(filename, num_frames, width, height, gr
             err_bit_map = zeros(num_chunks(1), num_chunks(2), group_size);
             for w = 1:num_chunks(1)
                 w_s = (w-1)*chunk_width + 1;
-                w_e = w*chunk_width;
+                w_e = min(w*chunk_width, width);
                 
                 for h = 1:num_chunks(2)
                     h_s = (h-1)*chunk_height + 1;
-                    h_e = h*chunk_height;
+                    h_e = min(h*chunk_height, height);
 
                     for f = 1:size(this_group, 3)
                         tmp = this_group_dct;
@@ -198,9 +198,9 @@ function [mse, mae, cc] = dct_based_pred(filename, num_frames, width, height, gr
                 if DEBUG0, fprintf('%d [%d, %d, %d], err = %f (%f)\n', err_ind_sort(selected_ind), w, h, f, err_bit_map(err_ind_sort(selected_ind)), err_sort(selected_ind)); end
 
                 w_s = (w-1)*chunk_width + 1;
-                w_e = w*chunk_width;
+                w_e = min(w*chunk_width, width);
                 h_s = (h-1)*chunk_height + 1;
-                h_e = h*chunk_height;
+                h_e = min(h*chunk_height, height);
                 est_group_dct(w_s:w_e, h_s:h_e, f) = this_group_dct(w_s:w_e, h_s:h_e, f);
             end
 
