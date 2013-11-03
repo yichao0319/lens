@@ -15,10 +15,10 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = dct_based('TM_Airport_period5_.exp0.', 12, 300, 300, 4, 50, 0, 0, 50, 50, 10, 20)
+%%     [tp, tn, fp, fn, precision, recall, f1score] = dct_based('/u/yichao/anomaly_compression/condor_data/subtask_inject_error/TM_err/', 'TM_Airport_period5_.exp0.', 12, 300, 300, 4, 50, 0, 0, 50, 50, 10, 20)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_frames, width, height, group_size, thresh, option_swap_mat, option_type, chunk_width, chunk_height, sel_chunks, quantization)
+function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(input_TM_dir, filename, num_frames, width, height, group_size, thresh, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization)
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils');
 
@@ -46,7 +46,7 @@ function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/TM_err/';
+    % input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/TM_err/';
     input_errs_dir = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/errs/';
     input_4sq_dir  = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
 
@@ -149,9 +149,9 @@ function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_
     if DEBUG1, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
     
 
-    compared_data = data;
-
-
+    %% --------------------
+    %% apply 3D DCT to each Group of Pictures (GoP)
+    %% --------------------
     for gop = 1:num_groups
         gop_s = (gop - 1) * group_size + 1;
         gop_e = min(num_frames, gop * group_size);
@@ -171,11 +171,11 @@ function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_
             err_bit_map = zeros(num_chunks(1), num_chunks(2), group_size);
             for w = 1:num_chunks(1)
                 w_s = (w-1)*chunk_width + 1;
-                w_e = w*chunk_width;
+                w_e = min(w*chunk_width, width);
                 
                 for h = 1:num_chunks(2)
                     h_s = (h-1)*chunk_height + 1;
-                    h_e = h*chunk_height;
+                    h_e = min(h*chunk_height, height);
 
                     for f = 1:size(this_group, 3)
                         tmp = this_group_dct;
@@ -192,15 +192,15 @@ function [tp, tn, fp, fn, precision, recall, f1score] = dct_based(filename, num_
             %% select chunks which cause larger error
             est_group_dct = zeros(size(this_group_dct));
             [err_sort, err_ind_sort] = sort(err_bit_map(:), 'descend');
-            for selected_ind = [1:min(sel_chunks, length(err_sort))]
+            for selected_ind = [1:min(selcted_chunk, length(err_sort))]
                 [w, h, f] = convert_3d_ind(num_chunks(1), num_chunks(2), size(this_group, 3), err_ind_sort(selected_ind));
                 
                 if DEBUG0, fprintf('%d [%d, %d, %d], err = %f (%f)\n', err_ind_sort(selected_ind), w, h, f, err_bit_map(err_ind_sort(selected_ind)), err_sort(selected_ind)); end
 
                 w_s = (w-1)*chunk_width + 1;
-                w_e = w*chunk_width;
+                w_e = min(w*chunk_width, width);
                 h_s = (h-1)*chunk_height + 1;
-                h_e = h*chunk_height;
+                h_e = min(h*chunk_height, height);
                 est_group_dct(w_s:w_e, h_s:h_e, f) = this_group_dct(w_s:w_e, h_s:h_e, f);
             end
 

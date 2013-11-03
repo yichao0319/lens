@@ -15,10 +15,11 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc] = pca_based_pred('TM_Airport_period5_', 12, 300, 300, 30, 30, 50, 2, 0, 0.001, 1)
+%%     [mse, mae, cc] = pca_based_pred('../processed_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 30, 30, 50, 2, 0, 0.001, 1)
+%%     [mse, mae, cc] = pca_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm.sort_ips.ap.country.txt.3600.', 8, 346, 346, 100, 100, 50, 2, 0, 0.001, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc] = pca_based_pred(filename, num_frames, width, height, block_width, block_height, r, option_dect, option_swap_mat, loss_rate, seed)
+function [mse, mae, cc] = pca_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, r, option_dect, option_swap_mat, loss_rate, seed)
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -45,7 +46,7 @@ function [mse, mae, cc] = pca_based_pred(filename, num_frames, width, height, bl
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '../processed_data/subtask_process_4sq/TM/';
+    % input_TM_dir   = '../processed_data/subtask_process_4sq/TM/';
     % input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
     input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
     input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
@@ -153,10 +154,10 @@ function [mse, mae, cc] = pca_based_pred(filename, num_frames, width, height, bl
 
         for w = [1:num_blocks(1)]
             w_s = (w-1)*block_width + 1;
-            w_e = w*block_width;
+            w_e = min(w*block_width, width);
             for h = [1:num_blocks(2)]
                 h_s = (h-1)*block_height + 1;
-                h_e = h*block_height;
+                h_e = min(h*block_height, height);
                 if DEBUG3, fprintf('  block: [%d,%d]\n', w, h); end
                 
                 this_block   = data(w_s:w_e, h_s:h_e, frame);
@@ -183,78 +184,6 @@ function [mse, mae, cc] = pca_based_pred(filename, num_frames, width, height, bl
     cc  = cc(1,2);
 end
 
-
-
-function [w2s, h2s] = find_block_ind(w, h, num_blocks, blocks)
-    % fprintf('find block ind: w=%d, h=%d, nw=%d, nh=%d, blocks=%d', w, h, num_blocks, blocks);
-    
-    if blocks == -1
-        w2s = [1:num_blocks(1)];
-        h2s = [1:num_blocks(2)];
-        return;
-    else
-        if blocks >= 0
-            w2s = [w];
-            h2s = [h];
-        end
-
-        if blocks >= 1
-            if w > 1
-                w2s = [w2s, w-1];
-                h2s = [h2s, h];
-            end
-        end
-
-        if blocks >= 2
-            if h < num_blocks(2)
-                w2s = [w2s, w];
-                h2s = [h2s, h+1];
-            end
-        end
-
-        if blocks >= 3
-            if w < num_blocks(1)
-                w2s = [w2s, w+1];
-                h2s = [h2s, h];
-            end
-        end
-
-        if blocks >= 4
-            if h > 1
-                w2s = [w2s, w];
-                h2s = [h2s, h-1];
-            end
-        end
-
-        if blocks >= 5
-            if w > 1 & h < num_blocks(2)
-                w2s = [w2s, w-1];
-                h2s = [h2s, h+1];
-            end
-        end
-
-        if blocks >= 6
-            if w < num_blocks(1) & h < num_blocks(2)
-                w2s = [w2s, w+1];
-                h2s = [h2s, h+1];
-            end
-        end
-
-        if blocks >= 7
-            if w < num_blocks(1) & h > 1
-                w2s = [w2s, w+1];
-                h2s = [h2s, h-1];
-            end
-        end
-
-        if blocks >= 8
-            if w > 1 & h > 1
-                w2s = [w2s, w-1];
-                h2s = [h2s, h-1];
-            end
-        end
-    end
-end
 
 
 %% -------------------------------------

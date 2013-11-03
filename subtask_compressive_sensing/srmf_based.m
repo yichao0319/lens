@@ -15,13 +15,13 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = smrf_based('TM_Airport_period5_.exp0.', 12, 300, 300, 4, 5, 50, 0, 1)
+%%     [tp, tn, fp, fn, precision, recall, f1score] = srmf_based('../processed_data/subtask_inject_error/TM_err/', 'TM_Airport_period5_.exp0.', 12, 300, 300, 4, 5, 50, 0, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num_frames, width, height, group_size, r, thresh, option_swap_mat, option_type)
-    addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
-    addpath('/u/yichao/anomaly_compression/utils/compressive_sensing');
-    addpath('/u/yichao/anomaly_compression/utils');
+function [tp, tn, fp, fn, precision, recall, f1score] = srmf_based(input_TM_dir, filename, num_frames, width, height, group_size, r, thresh, option_swap_mat, option_type)
+    addpath('../utils/mirt_dctn');
+    addpath('../utils/compressive_sensing');
+    addpath('../utils');
 
 
     %% --------------------
@@ -46,9 +46,9 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
     %% --------------------
     %% Variable
     %% --------------------
-    input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/TM_err/';
-    input_errs_dir = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/errs/';
-    input_4sq_dir  = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
+    % input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
+    input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
+    input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
     
 
 
@@ -150,7 +150,7 @@ function [tp, tn, fp, fn, precision, recall, f1score] = smrf_based(filename, num
     
 
     %% --------------------
-    %% apply SMRF to each Group of Pictures (GoP)
+    %% apply SRMF to each Group of Pictures (GoP)
     %% --------------------
     for gop = 1:num_groups
         gop_s = (gop - 1) * group_size + 1;

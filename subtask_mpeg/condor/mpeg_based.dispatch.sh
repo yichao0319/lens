@@ -3,6 +3,7 @@
 func="mpeg_based"
 
 for expnum in 0 1 2; do
+    input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_process_4sq\/TM\/"
     filename="TM_Airport_period5_.exp"
     num_frames=12
     width=300
@@ -138,7 +139,7 @@ for expnum in 0 1 2; do
                     for block_size in 30; do
                         for thresh in 5 10 15 20 30 50 70 100 150 200 250; do
                             echo ${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${thresh}.${opt_dect}.${opt_delta}.${opt_f_b}.${opt_swap_mat}
-                            sed "s/FILENAME/${filename}${expnum}./g;s/NUM_FRAMES/${num_frames}/g;s/BLOCK_HEIGHT/${block_size}/g;s/BLOCK_WIDTH/${block_size}/g;s/WIDTH/${width}/g;s/HEIGHT/${height}/g;s/THRESH/${thresh}/g;s/OPT_DECT/${opt_dect}/g;s/OPT_DELTA/${opt_delta}/g;s/OPT_FRAMES/${opt_frame}/g;s/OPT_BLOCKS/${opt_block}/g;s/OPT_FRAME_BLOCK/${opt_f_b}/g;s/OPT_SWAP_MAT/${opt_swap_mat}/g" ${func}.mother.sh > tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${thresh}.${opt_dect}.${opt_delta}.${opt_f_b}.${opt_swap_mat}.sh
+                            sed "s/INPUT_DIR/${input_dir}/g; s/FILENAME/${filename}${expnum}./g;s/NUM_FRAMES/${num_frames}/g;s/BLOCK_HEIGHT/${block_size}/g;s/BLOCK_WIDTH/${block_size}/g;s/WIDTH/${width}/g;s/HEIGHT/${height}/g;s/THRESH/${thresh}/g;s/OPT_DECT/${opt_dect}/g;s/OPT_DELTA/${opt_delta}/g;s/OPT_FRAMES/${opt_frame}/g;s/OPT_BLOCKS/${opt_block}/g;s/OPT_FRAME_BLOCK/${opt_f_b}/g;s/OPT_SWAP_MAT/${opt_swap_mat}/g" ${func}.mother.sh > tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${thresh}.${opt_dect}.${opt_delta}.${opt_f_b}.${opt_swap_mat}.sh
                             sed "s/XXX/${filename}${expnum}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${thresh}.${opt_dect}.${opt_delta}.${opt_f_b}.${opt_swap_mat}/g" ${func}.mother.condor > tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${thresh}.${opt_dect}.${opt_delta}.${opt_f_b}.${opt_swap_mat}.condor
                             condor_submit tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${thresh}.${opt_dect}.${opt_delta}.${opt_f_b}.${opt_swap_mat}.condor
                         done

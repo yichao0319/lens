@@ -3,6 +3,7 @@
 func="dct_based"
 
 for expnum in 0 1 2; do
+    ipnut_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_inject_error\/TM_err\/"
     filename="TM_Airport_period5_.exp"
     num_frames=12
     width=300
@@ -19,7 +20,7 @@ for expnum in 0 1 2; do
                     for quantization in 5 10 20 30 50; do
                         for thresh in 5 10 15 20 30 50 70 100 150 200 250; do
                             echo ${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${group_size}.${thresh}.${opt_swap_mat}.${opt_type}.${chunk_size}.${chunk_size}.${sel_chunks}.${quantization}
-                            sed "s/FILENAME/${filename}${expnum}./g;s/NUM_FRAMES/${num_frames}/g;s/CHUNK_WIDTH/${chunk_size}/g;s/CHUNK_HEIGHT/${chunk_size}/g;s/WIDTH/${width}/g;s/HEIGHT/${height}/g;s/GROUP_SIZE/${group_size}/g;s/THRESH/${thresh}/g;s/OPT_SWAP_MAT/${opt_swap_mat}/g;s/OPT_TYPE/${opt_type}/g;s/SEL_CHUNKS/${sel_chunks}/g;s/QUANTIZATION/${quantization}/g;" ${func}.mother.sh > tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${group_size}.${thresh}.${opt_swap_mat}.${opt_type}.${chunk_size}.${chunk_size}.${sel_chunks}.${quantization}.sh
+                            sed "s/INPUT_DIR/${ipnut_dir}/g; s/FILENAME/${filename}${expnum}./g;s/NUM_FRAMES/${num_frames}/g;s/CHUNK_WIDTH/${chunk_size}/g;s/CHUNK_HEIGHT/${chunk_size}/g;s/WIDTH/${width}/g;s/HEIGHT/${height}/g;s/GROUP_SIZE/${group_size}/g;s/THRESH/${thresh}/g;s/OPT_SWAP_MAT/${opt_swap_mat}/g;s/OPT_TYPE/${opt_type}/g;s/SEL_CHUNKS/${sel_chunks}/g;s/QUANTIZATION/${quantization}/g;" ${func}.mother.sh > tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${group_size}.${thresh}.${opt_swap_mat}.${opt_type}.${chunk_size}.${chunk_size}.${sel_chunks}.${quantization}.sh
                             sed "s/XXX/${filename}${expnum}.${num_frames}.${width}.${height}.${group_size}.${thresh}.${opt_swap_mat}.${opt_type}.${chunk_size}.${chunk_size}.${sel_chunks}.${quantization}/g" ${func}.mother.condor > tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${group_size}.${thresh}.${opt_swap_mat}.${opt_type}.${chunk_size}.${chunk_size}.${sel_chunks}.${quantization}.condor
                             condor_submit tmp.${func}.${filename}${expnum}.${num_frames}.${width}.${height}.${group_size}.${thresh}.${opt_swap_mat}.${opt_type}.${chunk_size}.${chunk_size}.${sel_chunks}.${quantization}.condor
                         done

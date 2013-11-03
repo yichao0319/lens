@@ -35,10 +35,10 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based('TM_Airport_period5_.exp0.', 12, 300, 300, 30, 30, 50, 3, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 1)
+%%     [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based('../processed_data/subtask_inject_error/TM_err/', 'TM_Airport_period5_.exp0.', 12, 300, 300, 30, 30, 50, 3, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num_frames, width, height, block_width, block_height, thresh, option_dect, option_delta, option_frames, option_blocks, option_swap_mat)
+function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(input_TM_dir, filename, num_frames, width, height, block_width, block_height, thresh, option_dect, option_delta, option_frames, option_blocks, option_swap_mat)
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -79,7 +79,8 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
     %% Variable
     %% --------------------
     % input_TM_dir  = '../processed_data/subtask_process_4sq/TM/';
-    input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
+    % input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
+    % input_TM_dir   = '../processed_data/subtask_parse_sjtu_wifi/tm/';
     input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
     input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
     % output_dir = '../processed_data/subtask_mpeg/output/';
@@ -190,10 +191,10 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
     if ismember(option_dect, [3])
         for w = [1:num_blocks(1)]
             w_s = (w-1)*block_width + 1;
-            w_e = w*block_width;
+            w_e = min(w*block_width, width);
             for h = [1:num_blocks(2)]
                 h_s = (h-1)*block_height + 1;
-                h_e = h*block_height;
+                h_e = min(h*block_height, height);
 
                 tmp = mirt_dctn(data(w_s:w_e, h_s:h_e, 1));
                 tmp = round(tmp ./ quantization) .* quantization;
@@ -213,13 +214,14 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
 
         for w = [1:num_blocks(1)]
             w_s = (w-1)*block_width + 1;
-            w_e = w*block_width;
+            w_e = min(w*block_width, width);
             for h = [1:num_blocks(2)]
                 h_s = (h-1)*block_height + 1;
-                h_e = h*block_height;
+                h_e = min(h*block_height, height);
                 if DEBUG3, fprintf('  block: [%d,%d]\n', w, h); end
                 
-                this_block = data(w_s:w_e, h_s:h_e, frame);
+                this_block = zeros(block_width, block_height);
+                this_block(1:(w_e-w_s+1), 1:(h_e-h_s+1)) = data(w_s:w_e, h_s:h_e, frame);
                 meanX2 = mean(reshape(this_block, [], 1).^2);
                 meanX = mean(reshape(this_block, [], 1));
 
@@ -244,11 +246,11 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
                     for ind2 = [1:length(w2s)]
                         w2 = w2s(ind2);
                         w2_s = (w2-1)*block_width + 1;
-                        w2_e = w2*block_width;
+                        w2_e = min(w2*block_width, width);
 
                         h2 = h2s(ind2);
                         h2_s = (h2-1)*block_height + 1;
-                        h2_e = h2*block_height;
+                        h2_e = min(h2*block_height, height);
 
                         if (comp_frame == frame) & (w2 == w) & (h2 == h) & (frame ~= 1)
                             continue;
@@ -258,7 +260,8 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
                             fprintf('    - f%d blocks [%d,%d], w=%d-%d, h=%d-%d\n', comp_frame, w2, h2, w2_s, w2_e, h2_s, h2_e);
                         end
 
-                        prev_block = compared_data(w2_s:w2_e, h2_s:h2_e, comp_frame);
+                        prev_block = zeros(block_width, block_height);
+                        prev_block(1:(w2_e-w2_s+1), 1:(h2_e-h2_s+1)) = compared_data(w2_s:w2_e, h2_s:h2_e, comp_frame);
 
                         delta = prev_block - this_block;
 
@@ -291,7 +294,7 @@ function [tp, tn, fp, fn, precision, recall, f1score] = mpeg_based(filename, num
                 %% end find the best fit block in the previous frame
                 %% ------------
 
-                this_frame(w_s:w_e, h_s:h_e) = min_delta_block;
+                this_frame(w_s:w_e, h_s:h_e) = min_delta_block(1:(w_e-w_s+1), 1:(h_e-h_s+1));
             end
         end
 

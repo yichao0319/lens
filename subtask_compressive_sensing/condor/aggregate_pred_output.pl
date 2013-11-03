@@ -54,7 +54,7 @@ if(@ARGV != 0) {
 #############
 # Main starts
 #############
-my $func = "smrf_based_pred";
+my $func = "srmf_based_pred";
 open FH_OUT, "> $output_dir/$func.txt" or die $!;
 
 for my $file_name ("TM_Airport_period5_") {

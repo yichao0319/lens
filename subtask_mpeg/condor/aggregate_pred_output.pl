@@ -57,19 +57,26 @@ if(@ARGV != 0) {
 my $func = "mpeg_based_pred";
 open FH_OUT, "> $output_dir/$func.txt" or die $!;
 
-for my $file_name ("TM_Airport_period5_") {
+# for my $file_name ("TM_Airport_period5_") {
+for my $file_name ("tm.sort_ips.ap.country.txt.3600.") {
     
     my $num_frames = 12;
     my $width = 300;
     my $height = 300;
     if($file_name eq "TM_Manhattan_period5_") {
-        my $width = 500;
-        my $height = 500;
+        $width = 500;
+        $height = 500;
+    }
+    elsif($file_name eq "tm.sort_ips.ap.country.txt.3600.") {
+        $num_frames = 8;
+        $width = 346;
+        $height = 346;
     }
 
     for my $loss_rate (0.001, 0.005, 0.01) {
 
-        for my $opt_swap_mat (0, 1, 2, 3) {
+        # for my $opt_swap_mat (0, 1, 2, 3) {
+        for my $opt_swap_mat (0, 3) {
             if(!(exists $best{TRACE}{"$file_name"}{OPT_SWAP_MAT}{$opt_swap_mat}{MSE})) {
                 $best{TRACE}{"$file_name"}{OPT_SWAP_MAT}{$opt_swap_mat}{MSE} = 0;
             }
@@ -109,7 +116,7 @@ for my $file_name ("TM_Airport_period5_") {
                         print FH_OUT_2 "$seed, ";
 
                         my $cnt = 0;
-                        for my $block_size (30) {
+                        for my $block_size (30, 100, 150) {
                             if(!(exists $best{TRACE}{"$file_name"}{BLOCK_SIZE}{$block_size}{MSE})) {
                                 $best{TRACE}{"$file_name"}{BLOCK_SIZE}{$block_size}{MSE} = 0;
                             }
