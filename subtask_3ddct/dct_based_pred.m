@@ -168,7 +168,7 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
 
             %% calculate error caused by each chunk
             this_group_dct = mirt_dctn(this_group);
-            err_bit_map = zeros(num_chunks(1), num_chunks(2), group_size);
+            err_bit_map = zeros(num_chunks(1), num_chunks(2), gop_e-gop_s+1);
             for w = 1:num_chunks(1)
                 w_s = (w-1)*chunk_width + 1;
                 w_e = min(w*chunk_width, width);
@@ -177,7 +177,7 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
                     h_s = (h-1)*chunk_height + 1;
                     h_e = min(h*chunk_height, height);
 
-                    for f = 1:size(this_group, 3)
+                    for f = 1:(gop_e-gop_s+1)
                         tmp = this_group_dct;
                         tmp(w_s:w_e, h_s:h_e, f) = 0;
                         tmp_est_gp = mirt_idctn(tmp);
@@ -193,7 +193,7 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
             est_group_dct = zeros(size(this_group_dct));
             [err_sort, err_ind_sort] = sort(err_bit_map(:), 'descend');
             for selected_ind = [1:min(selcted_chunk, length(err_sort))]
-                [w, h, f] = convert_3d_ind(num_chunks(1), num_chunks(2), size(this_group, 3), err_ind_sort(selected_ind));
+                [w, h, f] = convert_3d_ind(num_chunks(1), num_chunks(2), (gop_e-gop_s+1), err_ind_sort(selected_ind));
                 
                 if DEBUG0, fprintf('%d [%d, %d, %d], err = %f (%f)\n', err_ind_sort(selected_ind), w, h, f, err_bit_map(err_ind_sort(selected_ind)), err_sort(selected_ind)); end
 
