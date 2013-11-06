@@ -144,14 +144,17 @@ sub read_account_info {
     print "Read RADIUS account data\n" if($DEBUG0);
 
     my @files;
-    opendir(DIR, "$input_radius_dir") or die $!;
-    while (my $file = readdir(DIR)) {
-        next if($file =~ /^\.+/);  ## don't show "." and ".."
-        next if(-d "$input_radius_dir/$file");  ## don't show directories
+    ## XXX: should read file according to time
+    # opendir(DIR, "$input_radius_dir") or die $!;
+    # while (my $file = readdir(DIR)) {
+    #     next if($file =~ /^\.+/);  ## don't show "." and ".."
+    #     next if(-d "$input_radius_dir/$file");  ## don't show directories
 
-        push(@files, $file);
-    }
-    closedir(DIR);
+    #     push(@files, $file);
+    # }
+    # closedir(DIR);
+    ## XXX: hard coding
+    @files = ("RADIUS Accounting 2013-01-04_anonymous.csv");
 
     
     foreach my $file (sort {$a cmp $b} @files) {
