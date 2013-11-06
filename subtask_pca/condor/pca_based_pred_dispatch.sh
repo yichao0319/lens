@@ -2,35 +2,71 @@
 
 func="pca_based_pred"
 
-for loss_rate in 0.001 0.005 0.01; do
-    # input_dir='\/u\/yichao\/anomaly_compression\/condor_data\/subtask_process_4sq\/TM\/'
-    # filename="TM_Airport_period5_"
-    # num_frames=12
-    # width=300
-    # height=300
-    input_dir='\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/'
-    filename="tm.sort_ips.ap.country.txt.3600."
-    num_frames=8
-    width=346
-    height=346
 
-    # for opt_swap_mat in 0 1 2 3; do
-    for opt_swap_mat in 0 3; do
-        for opt_dect in 1; do
-            for block_size in 30 100 200 400; do
-                for rank in 1 2 3 5 10 20 30; do
-                    for seed in 1 2 3 4 5 6 7 8 9 10; do
-                        echo ${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}
-                        sed "s/INPUT_DIR/${input_dir}/g; s/FILENAME/${filename}/g;s/NUM_FRAMES/${num_frames}/g;s/BLOCK_HEIGHT/${block_size}/g;s/BLOCK_WIDTH/${block_size}/g;s/WIDTH/${width}/g;s/HEIGHT/${height}/g;s/OPT_DECT/${opt_dect}/g;s/RANK/${rank}/g;s/OPT_SWAP_MAT/${opt_swap_mat}/g;s/LOSS_RATE/${loss_rate}/g;s/SEED/${seed}/g" ${func}.mother.sh > tmp.${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}.sh
-                        sed "s/XXX/${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}/g" ${func}.mother.condor > tmp.${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}.condor
-                        condor_submit tmp.${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}.condor
+for filename in "tm.sort_ips.ap.country.txt.3600." "tm.sort_ips.ap.gps.4.txt.3600." "tm.select_matrix_for_id-Assignment.txt.60."; do
+
+    if [[ ${filename} == "TM_Airport_period5_" ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_process_4sq\/TM\/"
+        num_frames=12
+        width=300
+        height=300
+
+        opt_swap_mats=(0 1 2 3)
+        block_sizes=(30 100 200 400)
+        ranks=(1 2 3 5 10 20 30)
+    fi
+    if [[ ${filename} == "tm.sort_ips.ap.country.txt.3600." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
+        num_frames=9
+        width=346
+        height=346
+
+        opt_swap_mats=(0 3)
+        block_sizes=(30 100 200 400)
+        ranks=(1 2 3 5 10 20 30)
+    fi
+    if [[ ${filename} == "tm.sort_ips.ap.gps.4.txt.3600." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
+        num_frames=9
+        width=741
+        height=741
+
+        opt_swap_mats=(0 3)
+        block_sizes=(70 125 247 800)
+        ranks=(1 2 3 5 10 20 30 50)
+    fi
+    if [[ ${filename} == "tm.select_matrix_for_id-Assignment.txt.60." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_huawei_3g\/signaling_tm\/"
+        num_frames=12
+        width=28
+        height=28
+
+        opt_swap_mats=(0 3)
+        block_sizes=(10 14 28)
+        ranks=(1 2 3 4 5 10)
+    fi
+
+    seeds=(1 2 3 4 5 6 7 8 9 10)
+    loss_rates=(0.001 0.005 0.01)
+    opt_dects=(1)
+
+    for seed in ${seeds[@]}; do
+        for loss_rate in ${loss_rates[@]}; do
+            for opt_swap_mat in ${opt_swap_mats[@]}; do
+                for opt_dect in ${opt_dects[@]}; do
+                    for block_size in ${block_sizes[@]}; do
+                        for rank in ${ranks[@]}; do
+                            echo ${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}
+                            sed "s/INPUT_DIR/${input_dir}/g; s/FILENAME/${filename}/g;s/NUM_FRAMES/${num_frames}/g;s/BLOCK_HEIGHT/${block_size}/g;s/BLOCK_WIDTH/${block_size}/g;s/WIDTH/${width}/g;s/HEIGHT/${height}/g;s/OPT_DECT/${opt_dect}/g;s/RANK/${rank}/g;s/OPT_SWAP_MAT/${opt_swap_mat}/g;s/LOSS_RATE/${loss_rate}/g;s/SEED/${seed}/g" ${func}.mother.sh > tmp.${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}.sh
+                            sed "s/XXX/${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}/g" ${func}.mother.condor > tmp.${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}.condor
+                            condor_submit tmp.${func}.${filename}.${num_frames}.${width}.${height}.${block_size}.${block_size}.${rank}.${opt_dect}.${opt_swap_mat}.${loss_rate}.${seed}.condor
+                        done
                     done
                 done
             done
         done
     done
 done
-
 
 
 
