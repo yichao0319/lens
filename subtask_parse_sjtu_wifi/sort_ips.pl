@@ -5,18 +5,19 @@
 ## 2013.10.29 @ UT Austin
 ##
 ## - input:
-##   1. --sjtu: for SJTU machines
+##   1. -sjtu: for SJTU machines
 ##      a) gps: group by lat lng
-##         --res: resolution
+##         -res: resolution
 ##      b) ap: group by AP
 ##      c) ip: group by ip
-##         --mask: IP mask
+##         -mask: IP mask
 ##      d) bgp: group by BGP prefix
-##   2. --other: for other machines
+##   2. -other: for other machines
+##         -sub: use only subset of trace (e.g. CN, US)
 ##      a) gps: group by lat lng
-##         --res: resolution
+##         -res: resolution
 ##      b) ip: group by ip
-##         --mask: IP mask
+##         -mask: IP mask
 ##      c) bgp: group by BGP prefix
 ##      d) zip: group by zip
 ##      e) region: group by region code
@@ -26,7 +27,10 @@
 ##
 ## - e.g.
 ##      perl sort_ips.pl -sjtu ap -other country
-##      perl sort_ips.pl -sjtu ap -other gps -res 0.05
+##      perl sort_ips.pl -sjtu ap -other gps -res 4
+##      perl sort_ips.pl -sjtu ap -other gps -res 1 -sub CN
+##      perl sort_ips.pl -sjtu ap -other bgp -mask 10 -sub CN
+##      perl sort_ips.pl -sjtu ap -other bgp -mask 8
 ##
 ##########################################
 
@@ -73,6 +77,7 @@ my $sjtu;
 my $other;
 my $res;
 my $mask;
+my $subset;
 
 my %ip_table_info = ();
 my %invalid_info = ();
@@ -83,8 +88,8 @@ my %group_info = ();
 
 
 my $cnt_sjtu = 0;
+my $cnt_missing_sjtu_accnt = 0;
 my $cnt_missing_sjtu = 0;
-my $cnt_missing_sjtu_ap = 0;
 my $cnt_missing_other = 0;
 
 
@@ -94,16 +99,22 @@ my $cnt_missing_other = 0;
 GetOptions ('sjtu=s'  => \$sjtu, 
             'other=s' => \$other,
             'res:s'   => \$res, 
+            'sub:s'   => \$subset, 
             'mask=s'  => \$mask);
 $res += 0; $mask += 0;
-if($DEBUG0) {
+if($DEBUG1) {
     print "sjtu=$sjtu, other=$other\n";
     print "res=$res, mask=$mask\n";
+    print "sub=$subset\n" if($subset ne "");
 }
 if($sjtu eq "gps" or $other eq "gps") {
     die "Group by gps, res should not be 0\n" if($res == 0);
 }
+if($sjtu eq "bgp" or $other eq "bgp") {
+    die "Group by bgp, mask should not be 0\n" if($mask == 0);
+}
 
+# exit;
 
 #############
 # Main starts
@@ -169,6 +180,15 @@ while(<FH>) {
     next unless(exists $ip_table_info{IP}{$ip});
     die "should not have duplicate IP\n" if(exists $ip_info{IP}{$ip});
 
+
+    ###################
+    ## skip if "sub" option is set
+    ###################
+    if($subset ne "") {
+        next if($ip_table_info{IP}{$ip}{COUNTRY_CODE} ne $subset);
+    }
+    
+
     $ip_info{IP}{$ip} = $ip_table_info{IP}{$ip};
 
 
@@ -194,7 +214,7 @@ while(<FH>) {
             my $ap_mac = $account_info{USER_IP}{$ip}{AP_MAC};
             unless(exists $ap_info{AP_MAC}{$ap_mac}) {
                 ## cannot find the corresponding AP Name
-                $cnt_missing_sjtu_ap ++;
+                $cnt_missing_sjtu ++;
                 next;
             }
 
@@ -203,6 +223,32 @@ while(<FH>) {
 
             # $group_info{START_GRP} = $group unless(exists $group_info{START_GRP});
             $group_info{SJTU_GROUP}{$group}{IND} = 0;
+        }
+        elsif($sjtu eq "bgp") {
+            unless(exists $ip_info{IP}{$ip}{BGP_PREFIX}) {
+                ## this ip don't have BGP table
+                $cnt_missing_sjtu ++;
+                next;
+            }
+            my $group;
+
+            my $bgp = $ip_info{IP}{$ip}{BGP_PREFIX};
+            if($bgp =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/) {
+                # my @bgp_bytes = ($1, $2, $3, $4, $5);
+                # $group = join(".", @bgp_bytes[0 .. int($mask/8)-1]);
+
+                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                print "  $bgp -> group=$group\n" if($DEBUG0);
+            }
+            else {
+                die "wrong BGP format: $bgp\n";
+            }
+
+            $group_info{SJTU_GROUP}{$group}{LAT} = $ip_info{IP}{$ip}{LAT} + 0;
+            $group_info{SJTU_GROUP}{$group}{LNG} = $ip_info{IP}{$ip}{LNG} + 0;
+        }
+        else {
+            die "wrong other type: $sjtu\n";
         }
     }
 
@@ -213,7 +259,7 @@ while(<FH>) {
 
         ## this IP is supposed to be SJTU machine but cannot find it in Account info
         if($ip =~ /111\.186\.\d+\.\d+/) {
-            $cnt_missing_sjtu ++;
+            $cnt_missing_sjtu_accnt ++;
         }
 
         if($other eq "gps") {
@@ -240,14 +286,39 @@ while(<FH>) {
             $group_info{OTHER_GROUP}{$group}{LAT} = $lat;
             $group_info{OTHER_GROUP}{$group}{LNG} = $lng;
         }
+        elsif($other eq "bgp") {
+            unless(exists $ip_info{IP}{$ip}{BGP_PREFIX} and $ip_info{IP}{$ip}{BGP_PREFIX} ne "") {
+                ## this ip don't have BGP table
+                $cnt_missing_other ++;
+                next;
+            }
+            my $group;
+
+            my $bgp = $ip_info{IP}{$ip}{BGP_PREFIX};
+            if($bgp =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/) {
+                # my @bgp_bytes = ($1, $2, $3, $4, $5);
+
+                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                print "  $bgp -> group=$group\n" if($DEBUG0);
+            }
+            else {
+                die "wrong BGP format: \"$bgp\"\n";
+            }
+
+            $group_info{OTHER_GROUP}{$group}{LAT} = $ip_info{IP}{$ip}{LAT} + 0;
+            $group_info{OTHER_GROUP}{$group}{LNG} = $ip_info{IP}{$ip}{LNG} + 0;
+        }
+        else {
+            die "wrong other type: $other\n";
+        }
     }
 }
 close FH;
 
 
 print "  # sjtu devices: $cnt_sjtu\n";
-print "  # sjtu missing devices: $cnt_missing_sjtu\n";
-print "  # sjtu missing ap: $cnt_missing_sjtu_ap\n";
+print "  # sjtu missing devices account: $cnt_missing_sjtu_accnt\n";
+print "  # sjtu missing ap: $cnt_missing_sjtu\n";
 print "  # other missing devices: $cnt_missing_other\n";
 print "  # sjtu group: ".scalar(keys %{ $group_info{SJTU_GROUP} } )."\n";
 print "  # other group: ".scalar(keys %{ $group_info{OTHER_GROUP} } )."\n";
@@ -261,8 +332,9 @@ print "sort SJTU group\n" if($DEBUG2);
 my $cur_ind = 1;
 my $cur_lat = -1;
 my $cur_lng = -1;
-if($sjtu eq "gps") {
-    $output_name .= ".$sjtu.$res";
+if($sjtu eq "gps" or $sjtu eq "bgp") {
+    if($sjtu eq "gps") { $output_name .= ".$sjtu.$res"; }
+    elsif($sjtu eq "bgp") { $output_name .= ".$sjtu.$mask"; }
 
     my @tmp_grps = keys %{ $group_info{SJTU_GROUP} };
 
@@ -314,13 +386,10 @@ elsif($sjtu eq "ap") {
 ################
 print "sort other group\n" if($DEBUG2);
 
-if($other eq "gps" or $other eq "country") {
-    if($other eq "gps") {
-        $output_name .= ".$other.$res";
-    }
-    elsif($other eq "country") {
-        $output_name .= ".$other";
-    }
+if($other eq "gps" or $other eq "country" or $other eq "bgp") {
+    if   ($other eq "gps")     { $output_name .= ".$other.$res"; }
+    elsif($other eq "country") { $output_name .= ".$other"; }
+    elsif($other eq "bgp")     { $output_name .= ".$other.$mask"; }
 
     my @tmp_grps = keys %{ $group_info{OTHER_GROUP} };
 
@@ -359,10 +428,14 @@ if($other eq "gps" or $other eq "country") {
 }
 
 
+if($subset ne "") {
+    $output_name .= ".sub_$subset";
+}
+
 ################
-## map sjtu ips to grou
+## map sjtu ips to group
 ################
-print "map sjtu ips to grou\n" if($DEBUG2);
+print "map sjtu ips to group\n" if($DEBUG2);
 
 open FH, "> $output_dir/$output_name.txt" or die $!;
 foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
@@ -391,6 +464,25 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             my $index = $group_info{SJTU_GROUP}{$group}{IND};
             print FH "$ip, $index\n";
         }
+        elsif($sjtu eq "bgp") {
+            next unless(exists $ip_info{IP}{$ip}{BGP_PREFIX} and $ip_info{IP}{$ip}{BGP_PREFIX} ne "");
+
+            my $group;
+
+            my $bgp = $ip_info{IP}{$ip}{BGP_PREFIX};
+            if($bgp =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/) {
+                # my @bgp_bytes = ($1, $2, $3, $4, $5);
+
+                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                print "  $bgp -> group=$group\n" if($DEBUG0);
+            }
+            else {
+                die "wrong BGP format: \"$bgp\"\n";
+            }
+            
+            my $index = $group_info{SJTU_GROUP}{$group}{IND};
+            print FH "$ip, $index\n";
+        }
     }
     ###################
     ## other machines
@@ -410,6 +502,25 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             my $group = $ip_info{IP}{$ip}{COUNTRY_CODE};
             next if($group eq "");
 
+            my $index = $group_info{OTHER_GROUP}{$group}{IND};
+            print FH "$ip, $index\n";
+        }
+        elsif($other eq "bgp") {
+            next unless(exists $ip_info{IP}{$ip}{BGP_PREFIX} and $ip_info{IP}{$ip}{BGP_PREFIX} ne "");
+
+            my $group;
+
+            my $bgp = $ip_info{IP}{$ip}{BGP_PREFIX};
+            if($bgp =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/) {
+                # my @bgp_bytes = ($1, $2, $3, $4, $5);
+
+                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                print "  $bgp -> group=$group\n" if($DEBUG0);
+            }
+            else {
+                die "wrong BGP format: \"$bgp\"\n";
+            }
+            
             my $index = $group_info{OTHER_GROUP}{$group}{IND};
             print FH "$ip, $index\n";
         }

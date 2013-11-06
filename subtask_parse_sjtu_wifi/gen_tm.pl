@@ -18,10 +18,11 @@
 ##########################################
 
 use strict;
-use DateTime::Format::Strptime;
-use DateTime;
 
 use lib "../utils";
+
+use MyUtil;
+
 
 #############
 # Debug
@@ -61,6 +62,7 @@ my $frame = 0;
 my $total_bytes = 0;
 my $missing_bytes = 0;
 
+
 #############
 # check input
 #############
@@ -85,15 +87,6 @@ if($DEBUG2) {
 #############
 # Main starts
 #############
-my $filename_parser = DateTime::Format::Strptime->new(
-    pattern => '%B %d %H-%M-%S %Y',
-    on_error => 'croak',
-);
-my $text_parser = DateTime::Format::Strptime->new(
-    pattern => '%B %d, %Y %H:%M:%S.%N',
-    on_error => 'croak',
-);
-
 
 #############
 ## read the mapping
@@ -134,9 +127,6 @@ while (my $file = readdir(DIR)) {
 for my $file (sort {$a cmp $b} @files) {
     print "  $input_trace_dir/$file\n" if($DEBUG2);
 
-    my $dt = $filename_parser->parse_datetime($file);
-    print "  ".$dt->year()."/".$dt->month()."/".$dt->day()." ".$dt->hour().":".$dt->minute().":".$dt->second()."\n" if($DEBUG1);
-
 
     #############
     ## parse the file
@@ -151,28 +141,59 @@ for my $file (sort {$a cmp $b} @files) {
         #############
         ## parse time
         #############
-        $time =~ s{ +}{ }g;
         print "\n    - TIME: $time\n" if($DEBUG4);
-        
-        my $pkt_dt = $text_parser->parse_datetime($time);
-        print "      = ".$pkt_dt->year()."/".$pkt_dt->month()."/".$pkt_dt->day()." ".$pkt_dt->hour().":".$pkt_dt->minute().":".$pkt_dt->second()."+0.".$pkt_dt->nanosecond()."\n" if($DEBUG4);
-        
+        my $this_time;
+        if($time =~ /(\w*)\s+(\d+),\s+(\d+)\s+(\d+):(\d+):(\d+)\.(\d+)/) {
+            my $tmp = $1;
+            my $mon;
+            my $day = $2 + 0;
+            my $year = $3 + 0;
+            my $hour = $4 + 0;
+            my $min = $5 + 0;
+            my $sec = $6 + 0 + $7 / 1000000000;
+
+            if($tmp eq "Jan") { $mon = 1; }
+            elsif($tmp eq "Feb") { $mon = 2; }
+            elsif($tmp eq "Mar") { $mon = 3; }
+            elsif($tmp eq "Apr") { $mon = 4; }
+            elsif($tmp eq "May") { $mon = 5; }
+            elsif($tmp eq "Jan") { $mon = 6; }
+            elsif($tmp eq "Jul") { $mon = 7; }
+            elsif($tmp eq "Aug") { $mon = 8; }
+            elsif($tmp eq "Sep") { $mon = 9; }
+            elsif($tmp eq "Oct") { $mon = 10; }
+            elsif($tmp eq "Nov") { $mon = 11; }
+            elsif($tmp eq "Dec") { $mon = 12; }
+            else { die "wrong month: $tmp\n"; }
+
+            # $this_time = (((($year * 12 + $mon) * 31 + $day) * 24 + $hour) * 60 + $min) * 60 + $sec;
+            $this_time = MyUtil::to_seconds($year, $mon, $day, $hour, $min, $sec);
+            print "      = ".join("|", ($year, $mon, $day, $hour, $min, $sec))."\n" if($DEBUG4);
+            print "      = $this_time\n" if($DEBUG4);
+        }
+        else {
+            die "wrong time format: $time\n";
+        }
+
+
         if($set_period_dt == 1) {
             $set_period_dt = 0;
 
-            $period_end_dt = $pkt_dt->clone();
-            print "      start time=".$period_end_dt->year()."/".$period_end_dt->month()."/".$period_end_dt->day()." ".$period_end_dt->hour().":".$period_end_dt->minute().":".$period_end_dt->second()."+0.".$period_end_dt->nanosecond()."\n" if($DEBUG5);
+            $period_end_dt = $this_time;
+            print "      start time = $period_end_dt\n" if($DEBUG5);
             
-            $period_end_dt->add( seconds => $period );
-            print "      end time  =".$period_end_dt->year()."/".$period_end_dt->month()."/".$period_end_dt->day()." ".$period_end_dt->hour().":".$period_end_dt->minute().":".$period_end_dt->second()."+0.".$period_end_dt->nanosecond()."\n" if($DEBUG5);
+            $period_end_dt += $period;
+            print "      end time   = $period_end_dt\n" if($DEBUG5);
         }
 
-        while(DateTime->compare($pkt_dt, $period_end_dt) > 0) {
+        while($this_time > $period_end_dt) {
             write_tm("$output_dir/tm.$ip_map_file.$period.$frame.txt", \%tm, $sx);
             $frame ++;
             %tm = ();
-            $period_end_dt->add( seconds => $period );
-            print "      end time  =".$period_end_dt->year()."/".$period_end_dt->month()."/".$period_end_dt->day()." ".$period_end_dt->hour().":".$period_end_dt->minute().":".$period_end_dt->second()."+0.".$period_end_dt->nanosecond()."\n" if($DEBUG5);
+            
+            print "\n      start time = $period_end_dt\n" if($DEBUG5);
+            $period_end_dt += $period;
+            print "      end time   = $period_end_dt\n" if($DEBUG5);
         }
         
 
@@ -245,18 +266,18 @@ print "skip bytes = $missing_bytes\n";
 sub write_tm {
     my ($output_fullpath, $tm_ref, $sx) = @_;
 
-    open FH, "> $output_fullpath" or die $!;
+    open FH_OUT, "> $output_fullpath" or die $!;
     for my $i (1 .. $sx) {
         for my $j (1 .. $sx) {
-            print FH ", " if($j != 1);
+            print FH_OUT ", " if($j != 1);
             if(!(exists $tm_ref->{SRC}{$i}) or !(exists $tm_ref->{SRC}{$i}{DST}{$j})) {
-                print FH "0";
+                print FH_OUT "0";
             }
             else {
-                print FH $tm_ref->{SRC}{$i}{DST}{$j}{VALUE};
+                print FH_OUT $tm_ref->{SRC}{$i}{DST}{$j}{VALUE};
             }
         }
-        print FH "\n";
+        print FH_OUT "\n";
     }
-    close FH;
+    close FH_OUT;
 }
