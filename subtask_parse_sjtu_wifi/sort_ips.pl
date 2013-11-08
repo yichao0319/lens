@@ -6,22 +6,24 @@
 ##
 ## - input:
 ##   1. -sjtu: for SJTU machines
-##      a) gps: group by lat lng
+##      a) ap: group by AP
+##      b) gps: group by lat lng
 ##         -res: resolution
-##      b) ap: group by AP
-##      c) ip: group by ip
+##      c) bgp: group by BGP prefix
 ##         -mask: IP mask
-##      d) bgp: group by BGP prefix
+##      d) ip: group by ip
+##         -mask: IP mask
 ##   2. -other: for other machines
 ##         -sub: use only subset of trace (e.g. CN, US)
 ##      a) gps: group by lat lng
 ##         -res: resolution
-##      b) ip: group by ip
+##      b) bgp: group by BGP prefix
 ##         -mask: IP mask
-##      c) bgp: group by BGP prefix
-##      d) zip: group by zip
-##      e) region: group by region code
-##      f) country: group by country code
+##      c) country: group by country code
+##      d) ip: group by ip
+##         -mask: IP mask
+##      e) zip: group by zip
+##      f) region: group by region code
 ##
 ## - output:
 ##
@@ -160,6 +162,7 @@ while(<FH>) {
 }
 close FH;
 
+##############################################################################
 
 #############
 ## get all groups
@@ -324,6 +327,8 @@ print "  # sjtu group: ".scalar(keys %{ $group_info{SJTU_GROUP} } )."\n";
 print "  # other group: ".scalar(keys %{ $group_info{OTHER_GROUP} } )."\n";
 
 
+##############################################################################
+
 ################
 ## sort SJTU group
 ################
@@ -431,6 +436,8 @@ if($other eq "gps" or $other eq "country" or $other eq "bgp") {
 if($subset ne "") {
     $output_name .= ".sub_$subset";
 }
+
+##############################################################################
 
 ################
 ## map sjtu ips to group
