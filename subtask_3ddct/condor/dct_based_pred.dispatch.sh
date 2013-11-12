@@ -3,52 +3,81 @@
 func="dct_based_pred"
 
 
-# for filename in "TM_Airport_period5_"; do
-for filename in "tm.sort_ips.ap.country.txt.3600." "tm.sort_ips.ap.gps.4.txt.3600." "tm.select_matrix_for_id-Assignment.txt.60."; do
+# for filename in "TM_Airport_period5_" "tm.sort_ips.ap.gps.5.txt.3600." "tm.select_matrix_for_id-Assignment.txt.60." "tm.sort_ips.ap.country.txt.3600."  "tm.sort_ips.ap.bgp.8.txt.3600." "tm.sort_ips.ap.bgp.10.sub_CN.txt.3600."; do
+# for filename in "tm.sort_ips.ap.gps.1.sub_CN.txt.3600."; do
+for filename in "tm.sort_ips.ap.country.txt.3600."  "tm.sort_ips.ap.bgp.8.txt.3600." "tm.sort_ips.ap.bgp.10.sub_CN.txt.3600."; do
 
+    #############
     if [[ ${filename} == "TM_Airport_period5_" ]]; then
         input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_process_4sq\/TM\/"
         num_frames=12
         width=300
         height=300
 
-        opt_swap_mats=(0 1 2 3)
         chunk_sizes=(30 50 100)
         sel_chunkss=(1 5 10 20 30)
     fi
-    if [[ ${filename} == "tm.sort_ips.ap.country.txt.3600." ]]; then
-        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
-        num_frames=9
-        width=346
-        height=346
-
-        opt_swap_mats=(0 3)
-        chunk_sizes=(30 50 100)
-        sel_chunkss=(1 5 10 20 30)
-    fi
-    if [[ ${filename} == "tm.sort_ips.ap.gps.4.txt.3600." ]]; then
-        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
-        num_frames=9
-        width=741
-        height=741
-
-        opt_swap_mats=(0 3)
-        chunk_sizes=(70 125 247)
-        sel_chunkss=(1 5 10 20 30)
-    fi
+    #############
     if [[ ${filename} == "tm.select_matrix_for_id-Assignment.txt.60." ]]; then
         input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_huawei_3g\/signaling_tm\/"
         num_frames=12
         width=28
         height=28
 
-        opt_swap_mats=(0 3)
         chunk_sizes=(10 14)
         sel_chunkss=(1 2 3 5 10)
     fi
+    #############
+    if [[ ${filename} == "tm.sort_ips.ap.country.txt.3600." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
+        num_frames=8
+        width=400
+        height=400
+
+        chunk_sizes=(40 100 200)
+        sel_chunkss=(1 5 10 20 30)
+    fi
+    if [[ ${filename} == "tm.sort_ips.ap.gps.5.txt.3600." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
+        num_frames=8
+        width=738
+        height=738
+
+        chunk_sizes=(70 125 247)
+        sel_chunkss=(1 5 10 20 30)
+    fi
+    if [[ ${filename} == "tm.sort_ips.ap.gps.1.sub_CN.txt.3600." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
+        num_frames=8
+        width=410
+        height=410
+
+        chunk_sizes=(41 103 205)
+        sel_chunkss=(1 5 10 20 30)
+    fi
+    if [[ ${filename} == "tm.sort_ips.ap.bgp.8.txt.3600." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
+        num_frames=8
+        width=421
+        height=421
+
+        chunk_sizes=(43 106 211)
+        sel_chunkss=(1 5 10 20 30)
+    fi
+    if [[ ${filename} == "tm.sort_ips.ap.bgp.10.sub_CN.txt.3600." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_sjtu_wifi\/tm\/"
+        num_frames=8
+        width=403
+        height=403
+
+        chunk_sizes=(41 101 202)
+        sel_chunkss=(1 5 10 20 30)
+    fi
+    #############
 
     seeds=(1 2 3 4 5 6 7 8 9 10)
-    loss_rates=(0.001 0.005 0.01)
+    opt_swap_mats=(0 1 3)
+    loss_rates=(0.005 0.01 0.05)
     group_sizes=(4)
     opt_types=(0 1)
     quantizations=(5 10 20 30 50)
