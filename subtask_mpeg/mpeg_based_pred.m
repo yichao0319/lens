@@ -32,7 +32,7 @@
 %%
 %% e.g. 
 %%     [mse, mae, cc] = mpeg_based_pred('../processed_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 30, 30, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 0, 0.001, 1)
-%%     [mse, mae, cc] = mpeg_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm.sort_ips.ap.country.txt.3600.', 8, 346, 346, 100, 100, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 0, 0.001, 1)
+%%     [mse, mae, cc] = mpeg_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm.sort_ips.ap.country.txt.3600.', 7, 400, 400, 40, 40, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 0, 0.005, 0)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [mse, mae, cc] = mpeg_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, option_delta, option_frames, option_blocks, option_swap_mat, loss_rate, seed)
