@@ -34,8 +34,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [mse, mae, cc] = mpeg_lc_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, num_sel_blocks, option_delta, option_scope, option_sel_method, option_swap_mat, drop_rate, seed)
-    addpath('../utils/mirt_dctn');
-    addpath('../utils');
+    addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
+    addpath('/u/yichao/anomaly_compression/utils');
 
 
     %% --------------------
@@ -66,7 +66,7 @@ function [mse, mae, cc] = mpeg_lc_based_pred(input_TM_dir, filename, num_frames,
     %% Variable
     %% --------------------
     % input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
-    input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
+    input_4sq_dir  = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM';
 
 
     %% --------------------

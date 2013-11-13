@@ -6,6 +6,7 @@ Universe = vanilla
 
 executable = /bin/bash
 arguments = tmp.srmf_based_pred.XXX.sh
+Requirements = (ARCH == "X86_64")
 Requirements = Memory >= 64
 Rank = Memory >= 128
 

@@ -16,6 +16,7 @@
 %%
 %% e.g. 
 %%     [mse, mae, cc] = dct_based_pred('../processed_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 4, 0, 0, 50, 50, 10, 20, 0.001, 1)
+%%     [mse, mae, cc] = dct_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm.sort_ips.ap.country.txt.3600.', 7, 400, 400, 4, 0, 1, 40, 40, 10, 20, 0.005, 0)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization, loss_rate, seed)
