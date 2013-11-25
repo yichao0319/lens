@@ -1,3 +1,5 @@
 #!/bin/bash
 
-matlab -r "[mse, mae, cc] = dct_based_pred('INPUT_DIR', 'FILENAME', NUM_FRAMES, WIDTH, HEIGHT, GROUP_SIZE, OPT_SWAP_MAT, OPT_TYPE, CHUNK_WIDTH, CHUNK_HEIGHT, SEL_CHUNKS, QUANTIZATION, LOSS_RATE, SEED); fh = fopen(['/u/yichao/anomaly_compression/condor_data/subtask_3ddct/condor/output/dct_based_pred.FILENAME.NUM_FRAMES.WIDTH.HEIGHT.GROUP_SIZE.OPT_SWAP_MAT.OPT_TYPE.CHUNK_WIDTH.CHUNK_HEIGHT.SEL_CHUNKS.QUANTIZATION.LOSS_RATE.SEED.txt'], 'w'); fprintf(fh, '%f, %f, %f\n', mse, mae, cc); fclose(fh); exit;"
+matlab -r "[mse, mae, cc, ratio] = dct_based_pred('INPUT_DIR', 'FILENAME', NUM_FRAMES, WIDTH, HEIGHT, GROUP_SIZE, OPT_SWAP_MAT, OPT_TYPE, CHUNK_WIDTH, CHUNK_HEIGHT, SEL_CHUNKS, QUANTIZATION, LOSS_RATE, SEED); fh = fopen(['/u/yichao/anomaly_compression/condor_data/subtask_3ddct/condor/output/dct_based_pred.FILENAME.NUM_FRAMES.WIDTH.HEIGHT.GROUP_SIZE.OPT_SWAP_MAT.OPT_TYPE.CHUNK_WIDTH.CHUNK_HEIGHT.SEL_CHUNKS.QUANTIZATION.LOSS_RATE.SEED.txt'], 'w'); fprintf(fh, '%f, %f, %f, %f', mse, mae, cc, ratio); fclose(fh); exit;"
+
+# /v/filer4b/v27q001/ut-wireless/Han/matlabR2008a/bin/matlab -r "[mse, mae, cc, ratio] = dct_based_pred('INPUT_DIR', 'FILENAME', NUM_FRAMES, WIDTH, HEIGHT, GROUP_SIZE, OPT_SWAP_MAT, OPT_TYPE, CHUNK_WIDTH, CHUNK_HEIGHT, SEL_CHUNKS, QUANTIZATION, LOSS_RATE, SEED); exit;"
