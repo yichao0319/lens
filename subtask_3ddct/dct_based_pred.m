@@ -11,15 +11,17 @@
 %%   @option_type: determine the way to remove unimportant parts
 %%      0: remove those values which are close to 0
 %%      1: remove chunks which cause smallest errors
+%%   @loss_rate: 
+%%      (0-1): drop elements for prediction
+%%      0    : compression
 %%
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc] = dct_based_pred('../processed_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 4, 0, 0, 50, 50, 10, 20, 0.001, 1)
-%%     [mse, mae, cc] = dct_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm.sort_ips.ap.country.txt.3600.', 7, 400, 400, 4, 0, 1, 40, 40, 10, 20, 0.005, 0)
+%%     [mse, mae, cc, ratio] = dct_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 0, 1, 22, 40, 10, 20, 0.05, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization, loss_rate, seed)
+function [mse, mae, cc, ratio] = dct_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, option_swap_mat, option_type, chunk_width, chunk_height, selcted_chunk, quantization, loss_rate, seed)
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -28,36 +30,36 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
     %% DEBUG
     %% --------------------
     DEBUG0 = 0;
-    DEBUG1 = 1;
-    DEBUG2 = 1;
+    DEBUG1 = 0;
+    DEBUG2 = 0;
     DEBUG3 = 0; %% block index check
+    DEBUG_WRITE = 0;
 
-    if width ~= height
-        fprintf('width should be equal to height: %d, %d\n', width, height);
-        return;
-    end
+    % if width ~= height
+    %     fprintf('width should be equal to height: %d, %d\n', width, height);
+    %     return;
+    % end
 
 
     %% --------------------
     %% Constant
     %% --------------------
     % quantization = 10;
+    ele_size = 32;  %% size of each elements in bits
 
 
     %% --------------------
     %% Variable
     %% --------------------
-    % input_TM_dir   = '../processed_data/subtask_process_4sq/TM/';
-    % input_TM_dir   = '../processed_data/subtask_inject_error/TM_err/';
-    input_errs_dir =  '../processed_data/subtask_inject_error/errs/';
-    input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
+    % input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
+    space = 0;
 
 
     %% --------------------
     %% Main starts
     %% --------------------
     rand('seed', seed);
-    num_chunks = [ceil(width/chunk_width), ceil(height/chunk_height)];
+    num_chunks = [ceil(height/chunk_height), ceil(width/chunk_width)];
     num_groups = ceil(num_frames / group_size);
 
 
@@ -66,7 +68,7 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
     %% --------------------
     if DEBUG2, fprintf('read data matrix\n'); end
 
-    data = zeros(width, height, num_frames);
+    data = zeros(height, width, num_frames);
     for frame = [0:num_frames-1]
         if DEBUG0, fprintf('  frame %d\n', frame); end
 
@@ -75,7 +77,9 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
         if DEBUG0, fprintf('    file = %s\n', this_matrix_file); end
         
         tmp = load(this_matrix_file);
-        data(:,:,frame+1) = tmp(1:width, 1:height);
+        if DEBUG0, fprintf('      size = [%d,%d]\n', size(tmp)); end
+
+        data(:,:,frame+1) = tmp(1:height, 1:width);
     end
     sx = size(data(:,:,1));
     nx = prod(sx);
@@ -87,14 +91,19 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
     if DEBUG2, fprintf('drop elements\n'); end
 
     M = ones(size(data));
-    num_missing = ceil(nx * loss_rate);
-    for f = [1:num_frames]
-        if DEBUG0, fprintf('  frame %d\n', f); end
+    if loss_rate > 0
+        %% drop elements for prediction
+        num_missing = ceil(nx * loss_rate);
+        for f = [1:num_frames]
+            if DEBUG0, fprintf('  frame %d\n', f); end
 
-        ind = randperm(nx);
-        tmp = M(:,:,f);
-        tmp(ind(1:num_missing)) = 0;
-        M(:,:,f) = tmp;
+            ind = randperm(nx);
+            tmp = M(:,:,f);
+            tmp(ind(1:num_missing)) = 0;
+            M(:,:,f) = tmp;
+        end
+    else
+        %% compression
     end
 
 
@@ -109,41 +118,74 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
 
     if option_swap_mat == 0
         %% 0: original matrix
-        mapping = [1:width];
+        mapping_rows = [1:height];
+        mapping_cols = [1:width];
     elseif option_swap_mat == 1
         %% 1: randomize raw and col
-        mapping = randperm(width);
+        mapping_rows = randperm(height);
+        mapping_cols = randperm(width);
     elseif option_swap_mat == 2
-        %% 2: geo
-        [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
-        if DEBUG0
-            fprintf('  size of location: %d, %d\n', size(location));
-            fprintf('  size of mass: %d, %d\n', size(mass));
-        end
+        %% 2: geo -- only for 4sq TM
+        % [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
+        % if DEBUG0
+        %     fprintf('  size of location: %d, %d\n', size(location));
+        %     fprintf('  size of mass: %d, %d\n', size(mass));
+        % end
         
-        mapping = sort_by_lat_lng(location, width, height);
+        % mapping = sort_by_lat_lng(location, width, height);
 
     elseif option_swap_mat == 3
         %% 3: correlated coefficient
-        tmp = reshape(data, width, []);
-        if DEBUG1
-            fprintf('  size of the whole matrix: %d, %d\n', size(tmp));
-        end
         
-        coef = corrcoef(tmp');
-        mapping = sort_by_coef(coef, width, height);
+        tmp_rows = reshape(data, height, []);
+        tmp_cols = zeros(height*num_frames, width);
+        for f = [1:num_frames]
+            tmp_cols( (f-1)*height+1:f*height, : ) = data(:,:,f);
+        end
+
+        %% corrcoef: rows=obervations, col=features
+        coef_rows = corrcoef(tmp_rows');
+        coef_cols = corrcoef(tmp_cols);
+
+        mapping_rows = sort_by_coef(coef_rows);
+        mapping_cols = sort_by_coef(coef_cols);
+
+    elseif option_swap_mat == 4
+        %% 4: popularity
+        error('XXX: swap according to popularity\n');
+        
     end
 
     %% update the data matrix according to the mapping
     for f = [1:num_frames]
-        data(:,:,f) = map_matrix(data(:,:,f), mapping);
-        M(:,:,f)    = map_matrix(M(:,:,f), mapping);
+        data(:,:,f) = map_matrix(data(:,:,f), mapping_rows, mapping_cols);
+        M(:,:,f)    = map_matrix(M(:,:,f), mapping_rows, mapping_cols);
     end
 
     if DEBUG1, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
     
-    compared_data = data;
-    compared_data(~M) = 0;
+
+    %% --------------------    
+    %% first guess of missing elements
+    %% --------------------
+    if loss_rate > 0
+        %% prediction 
+
+        %% by 0s
+        % compared_data = data;
+        % compared_data(~M) = 0;
+
+        %% by mean of other elements
+        % compared_data = data;
+        % compared_data(~M) = mean(reshape(data(M==1), [], 1));
+
+        %% by average of nearby elements
+        compared_data = first_guess('avg', data, M);
+    else
+        %% compression
+        compared_data = data;
+    end
+
 
     %% --------------------
     %% apply 3D DCT to each Group of Pictures (GoP)
@@ -154,38 +196,40 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
 
         if DEBUG1 == 0, fprintf('gop %d: frame %d-%d\n', gop, gop_s, gop_e); end
 
-        this_group   = data(:, :, gop_s:gop_e);
+        this_group   = compared_data(:, :, gop_s:gop_e);
         this_group_M = M(:, :, gop_s:gop_e);
 
-        %% first guess of missing elements
-        this_group(~this_group_M) = mean(reshape(this_group(this_group_M==1), [], 1));
 
 
         if option_type == 0
             %% ignore elements which are close to 0
-            est_group  = mirt_idctn(round(mirt_dctn(this_group) / quantization) * quantization);
+            this_dct = round(mirt_dctn(this_group) / quantization) * quantization;
+            est_group  = mirt_idctn(this_dct);
+
+            %% space required
+            space = space + nx*(gop_e-gop_s+1) + length(find(this_dct ~= 0))*ele_size;
         elseif option_type == 1
             %% ignore chunks which cause smaller errors
 
             %% calculate error caused by each chunk
             this_group_dct = mirt_dctn(this_group);
             err_bit_map = zeros(num_chunks(1), num_chunks(2), gop_e-gop_s+1);
-            for w = 1:num_chunks(1)
+            for w = 1:num_chunks(2)
                 w_s = (w-1)*chunk_width + 1;
                 w_e = min(w*chunk_width, width);
                 
-                for h = 1:num_chunks(2)
+                for h = 1:num_chunks(1)
                     h_s = (h-1)*chunk_height + 1;
                     h_e = min(h*chunk_height, height);
 
                     for f = 1:(gop_e-gop_s+1)
                         tmp = this_group_dct;
-                        tmp(w_s:w_e, h_s:h_e, f) = 0;
+                        tmp(h_s:h_e, w_s:w_e, f) = 0;
                         tmp_est_gp = mirt_idctn(tmp);
 
-                        err_bit_map(w, h, f) = mean(abs(tmp_est_gp(:) - this_group(:)));
+                        err_bit_map(h, w, f) = mean(abs(tmp_est_gp(:) - this_group(:)));
 
-                        if DEBUG0, fprintf('  chunk [%d, %d, %d], err=%f\n', w, h, f, err_bit_map(w, h, f)); end
+                        if DEBUG0, fprintf('  chunk [%d, %d, %d], err=%f\n', h, w, f, err_bit_map(h, w, f)); end
                     end
                 end
             end
@@ -194,18 +238,22 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
             est_group_dct = zeros(size(this_group_dct));
             [err_sort, err_ind_sort] = sort(err_bit_map(:), 'descend');
             for selected_ind = [1:min(selcted_chunk, length(err_sort))]
-                [w, h, f] = convert_3d_ind(num_chunks(1), num_chunks(2), (gop_e-gop_s+1), err_ind_sort(selected_ind));
+                [h, w, f] = ind2sub([num_chunks(1), num_chunks(2), (gop_e-gop_s+1)], err_ind_sort(selected_ind));
                 
-                if DEBUG0, fprintf('%d [%d, %d, %d], err = %f (%f)\n', err_ind_sort(selected_ind), w, h, f, err_bit_map(err_ind_sort(selected_ind)), err_sort(selected_ind)); end
+                if DEBUG0, fprintf('%d [%d, %d, %d], err = %f (%f)\n', err_ind_sort(selected_ind), h, w, f, err_bit_map(err_ind_sort(selected_ind)), err_sort(selected_ind)); end
 
                 w_s = (w-1)*chunk_width + 1;
                 w_e = min(w*chunk_width, width);
                 h_s = (h-1)*chunk_height + 1;
                 h_e = min(h*chunk_height, height);
-                est_group_dct(w_s:w_e, h_s:h_e, f) = this_group_dct(w_s:w_e, h_s:h_e, f);
+                est_group_dct(h_s:h_e, w_s:w_e, f) = this_group_dct(h_s:h_e, w_s:w_e, f);
             end
 
             est_group  = mirt_idctn(est_group_dct);
+
+
+            %% space required
+            space = space + nx*(gop_e-gop_s+1) + min(selcted_chunk, length(err_sort))*chunk_width*chunk_height*ele_size;
         end
 
         compared_data(:, :, gop_s:gop_e) = est_group;
@@ -214,10 +262,28 @@ function [mse, mae, cc] = dct_based_pred(input_TM_dir, filename, num_frames, wid
 
     meanX2 = mean(data(:).^2);
     meanX = mean(data(:));
-    mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
-    mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
-    cc  = corrcoef(data(~M),max(0,compared_data(~M)));
-    cc  = cc(1,2);
+
+    if loss_rate > 0
+        %% prediction
+        mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
+        mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
+        cc  = corrcoef(data(~M),max(0,compared_data(~M)));
+        cc  = cc(1,2);
+    else
+        %% compression
+        mse = mean(( data(:) - max(0,compared_data(:)) ).^2) / meanX2;
+        mae = mean(abs((data(:) - max(0,compared_data(:))))) / meanX;
+        cc  = corrcoef(data(:),max(0,compared_data(:)));
+        cc  = cc(1,2);
+    end
+    ratio = space / (width*height*num_frames*ele_size);
+
+    fprintf('%f, %f, %f, %f', mse, mae, cc, ratio);
+
+
+    if DEBUG_WRITE == 1
+        dlmwrite('tmp.txt', [find(M==0), data(~M), max(0,compared_data(~M))]);
+    end
 end
 
 
@@ -228,23 +294,23 @@ end
 %%    a vector to map venues to the other
 %%    e.g. [4, 3, 1, 2] means mapping 1->4, 2->3, 3->1, 4->2
 %%
-function [new_mat] = map_matrix(mat, mapping)
+function [new_mat] = map_matrix(mat, mapping_rows, mapping_cols)
     new_mat = zeros(size(mat));
-    new_mat(mapping, :) = mat;
+    new_mat(mapping_rows, :) = mat;
     tmp = new_mat;
-    new_mat(:, mapping) = tmp;
+    new_mat(:, mapping_cols) = tmp;
 end
 
 
 %% find_ind: function description
-function [map_ind] = find_mapping_ind(ind, width, height, mapping)
-    y = mod(ind-1, height) + 1;
-    x = floor((ind-1)/height) + 1;
+% function [map_ind] = find_mapping_ind(ind, width, height, mapping)
+%     y = mod(ind-1, height) + 1;
+%     x = floor((ind-1)/height) + 1;
 
-    x2 = mapping(x);
-    y2 = mapping(y);
-    map_ind = (x2 - 1) * height + y2;
-end
+%     x2 = mapping(x);
+%     y2 = mapping(y);
+%     map_ind = (x2 - 1) * height + y2;
+% end
 
 
 %% -------------------------------------
@@ -252,39 +318,39 @@ end
 %% @input location: 
 %%    a Nx2 matrix to represent the (lat, lng) of N venues
 %%
-function [mapping] = sort_by_lat_lng(location, width, height)
-    mapping = ones(1, width);
-    tmp = 2:width;
-    src = 1;
-    src_ind = 2;
-    while length(tmp) > 0
-        min_dist = -1;
-        min_dist_dst = 0;
-        min_dist_ind = 0;
+% function [mapping] = sort_by_lat_lng(location, width, height)
+%     mapping = ones(1, width);
+%     tmp = 2:width;
+%     src = 1;
+%     src_ind = 2;
+%     while length(tmp) > 0
+%         min_dist = -1;
+%         min_dist_dst = 0;
+%         min_dist_ind = 0;
 
-        ind = 0;
-        for dst = tmp
-            ind = ind + 1;
-            dist = pos2dist(location(src,1), location(src,2), location(dst,1), location(dst,2), 2);
+%         ind = 0;
+%         for dst = tmp
+%             ind = ind + 1;
+%             dist = pos2dist(location(src,1), location(src,2), location(dst,1), location(dst,2), 2);
 
-            if (min_dist == -1) | (min_dist > dist) 
-                min_dist = dist;
-                min_dist_dst = dst;
-                min_dist_ind = ind;
-            end
-        end
+%             if (min_dist == -1) | (min_dist > dist) 
+%                 min_dist = dist;
+%                 min_dist_dst = dst;
+%                 min_dist_ind = ind;
+%             end
+%         end
 
-        if tmp(min_dist_ind) ~= min_dist_dst
-            fprintf('min dist dst does not match: %d, %d\n', tmp(min_dist_ind), min_dist_dst);
-            return;
-        end
+%         if tmp(min_dist_ind) ~= min_dist_dst
+%             fprintf('min dist dst does not match: %d, %d\n', tmp(min_dist_ind), min_dist_dst);
+%             return;
+%         end
 
-        mapping(src_ind) = min_dist_dst;
-        src = min_dist_dst;
-        src_ind = src_ind + 1;
-        tmp(min_dist_ind) = [];
-    end
-end
+%         mapping(src_ind) = min_dist_dst;
+%         src = min_dist_dst;
+%         src_ind = src_ind + 1;
+%         tmp(min_dist_ind) = [];
+%     end
+% end
 
 
 %% -------------------------------------
@@ -292,17 +358,18 @@ end
 %% @input coef: 
 %%    a NxN matrix to represent the correlation coefficient of N venues
 %%
-function [mapping] = sort_by_coef(coef, width, height)
-    mapping = ones(1, width);
-    tmp = 2:width;
+function [mapping] = sort_by_coef(coef)
+    sx = size(coef, 1);
+    mapping = ones(1, sx);
+    tmp = 2:sx;  %% list of non-selected venues
     src = 1;
-    src_ind = 2;
+    src_ind = 2; %% index to mpaaing
     while length(tmp) > 0
         max_coef = -1;
         max_coef_dst = 0;
         max_coef_ind = 0;
 
-        ind = 0;
+        ind = 0;  %% index to tmp
         for dst = tmp
             ind = ind + 1;
             this_coef = coef(src, dst);
@@ -316,7 +383,7 @@ function [mapping] = sort_by_coef(coef, width, height)
 
         if tmp(max_coef_ind) ~= max_coef_dst
             fprintf('max coef dst does not match: %d, %d\n', tmp(max_coef_ind), max_coef_dst);
-            return;
+            error('exit');
         end
 
         mapping(src_ind) = max_coef_dst;
@@ -328,8 +395,60 @@ end
 
 
 %% convert_3d_ind
-function [x, y, z] = convert_3d_ind(w, h, f, line_ind)
-    z = floor( (line_ind - 1) / (w*h)) + 1;
-    y = floor( (line_ind - (z-1) * (w*h) - 1 ) / w) + 1;
-    x = floor( (line_ind - (z-1) * (w*h) - (y-1) * w) );
+% function [x, y, z] = convert_3d_ind(w, h, f, line_ind)
+%     z = floor( (line_ind - 1) / (w*h)) + 1;
+%     y = floor( (line_ind - (z-1) * (w*h) - 1 ) / w) + 1;
+%     x = floor( (line_ind - (z-1) * (w*h) - (y-1) * w) );
+% end
+
+
+%% first_guess: fill in the missing elements
+function [filled_data] = first_guess(method, data, M)
+    filled_data = data;
+    filled_data(~M) = 0;
+
+    sx = size(data);
+    nx = sx(1) * sx(2) * sx(3);
+    nx_f = sx(1) * sx(2);
+
+
+    if strcmp(method, 'avg') == 1
+        
+        for drop = [find(M == 0)]
+            tmp_sum = 0;
+            tmp_cnt = 0;
+
+            if (drop + 1 < nx) & (M(drop+1) == 1)
+                tmp_sum = tmp_sum + data(drop+1);
+                tmp_cnt = tmp_cnt + 1;
+            end
+            if (drop + nx_f < nx) & (M(drop+nx_f) == 1)
+                tmp_sum = tmp_sum + data(drop+nx_f);
+                tmp_cnt = tmp_cnt + 1;
+            end
+            if (drop + 2*nx_f < nx) & (M(drop+2*nx_f) == 1)
+                tmp_sum = tmp_sum + data(drop+2*nx_f);
+                tmp_cnt = tmp_cnt + 1;
+            end
+            if (drop - 1 > 0) & (M(drop-1) == 1)
+                tmp_sum = tmp_sum + data(drop-1);
+                tmp_cnt = tmp_cnt + 1;
+            end
+            if (drop - nx_f > 0) & (M(drop-nx_f) == 1)
+                tmp_sum = tmp_sum + data(drop-nx_f);
+                tmp_cnt = tmp_cnt + 1;
+            end
+            if (drop - 2*nx_f > 0) & (M(drop-2*nx_f) == 1)
+                tmp_sum = tmp_sum + data(drop-2*nx_f);
+                tmp_cnt = tmp_cnt + 1;
+            end
+
+            if tmp_cnt > 0
+                filled_data(drop) = tmp_sum / tmp_cnt;
+            end
+        end
+    
+    else
+        error('wrong input metho: %d\n', method);
+    end
 end
