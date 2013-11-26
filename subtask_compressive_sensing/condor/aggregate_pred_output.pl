@@ -60,6 +60,7 @@ if(@ARGV != 0) {
 #############
 my $func = "srmf_based_pred";
 open FH_OUT, "> $output_dir/$func.txt" or die $!;
+open FH_MEAN_OUT, "> $output_dir/$func.mean.txt" or die $!;
 
 my $num_frames;
 my $width;
@@ -73,78 +74,90 @@ my @opt_types;
 my @files;
 
 # @files = ("TM_Airport_period5_");
-# @files = ("tm.sort_ips.ap.country.txt.3600.", "tm.sort_ips.ap.gps.4.txt.3600.", "tm.select_matrix_for_id-Assignment.txt.60.");
-@files = ("tm.sort_ips.ap.gps.1.sub_CN.txt.3600.");
+# @files = ("tm.sort_ips.ap.gps.1.sub_CN.txt.3600.");
+# @files = ("tm.sort_ips.ap.country.txt.3600.");
+# @files = ("tm.sort_ips.ap.bgp.8.txt.3600.");
+# @files = ("tm.sort_ips.ap.bgp.10.sub_CN.txt.3600.");
+
+@files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
+
 
 for my $file_name (@files) {    
     
-    #######################
-    if($file_name eq "TM_Manhattan_period5_") {
-        $num_frames = 12;
-        $width = 500;
-        $height = 500;
+    # #######################
+    # if($file_name eq "TM_Manhattan_period5_") {
+    #     $num_frames = 12;
+    #     $width = 500;
+    #     $height = 500;
 
-        @ranks = (1, 2, 3, 5, 7, 10, 20, 30, 50);
-    }
-    elsif($file_name eq "TM_Airport_period5_") {
-        $num_frames = 12;
-        $width = 300;
-        $height = 300;
+    #     @ranks = (1, 2, 3, 5, 7, 10, 20, 30, 50);
+    # }
+    # elsif($file_name eq "TM_Airport_period5_") {
+    #     $num_frames = 12;
+    #     $width = 300;
+    #     $height = 300;
 
-        @ranks = (1, 2, 3, 5, 7, 10, 20, 30, 50);
-    }
-    #######################
-    elsif($file_name eq "tm.select_matrix_for_id-Assignment.txt.60.") {
-        $num_frames = 12;
-        $width = 28;
-        $height = 28;
+    #     @ranks = (1, 2, 3, 5, 7, 10, 20, 30, 50);
+    # }
+    # #######################
+    # elsif($file_name eq "tm.select_matrix_for_id-Assignment.txt.60.") {
+    #     $num_frames = 12;
+    #     $width = 28;
+    #     $height = 28;
 
-        @ranks = (1, 2, 3, 5, 7, 10);
-    }
-    #######################
-    elsif($file_name eq "tm.sort_ips.ap.country.txt.3600.") {
+    #     @ranks = (1, 2, 3, 5, 7, 10);
+    # }
+    # #######################
+    # elsif($file_name eq "tm.sort_ips.ap.country.txt.3600.") {
+    #     $num_frames = 11;
+    #     $width = 400;
+    #     $height = 400;
+
+    #     @ranks = (1, 2, 3, 5, 10, 20, 30);
+    # }
+    # elsif($file_name eq "tm.sort_ips.ap.gps.5.txt.3600.") {
+    #     $num_frames = 11;
+    #     $width = 738;
+    #     $height = 738;
+
+    #     @ranks = (1, 2, 3, 5, 10, 20, 30);
+    # }
+    # elsif($file_name eq "tm.sort_ips.ap.gps.1.sub_CN.txt.3600.") {
+    #     $num_frames = 11;
+    #     $width = 410;
+    #     $height = 410;
+
+    #     @ranks = (1, 2, 3, 5, 10, 20, 30);
+    # }
+    # elsif($file_name eq "tm.sort_ips.ap.bgp.8.txt.3600.") {
+    #     $num_frames = 11;
+    #     $width = 421;
+    #     $height = 421;
+
+    #     @ranks = (1, 2, 3, 5, 10, 20, 30);
+    # }
+    # elsif($file_name eq "tm.sort_ips.ap.bgp.10.sub_CN.txt.3600.") {
+    #     $num_frames = 11;
+    #     $width = 403;
+    #     $height = 403;
+
+    #     @ranks = (1, 2, 3, 5, 10, 20, 30);
+    # }
+    # #######################
+    if($file_name eq "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.") {
         $num_frames = 8;
-        $width = 400;
+        $width = 217;
         $height = 400;
 
-        @ranks = (1, 2, 3, 5, 10, 20, 30);
+        @ranks = (1, 2, 3, 5, 10, 20, 30, 50, 100, 150);
     }
-    elsif($file_name eq "tm.sort_ips.ap.gps.5.txt.3600.") {
-        $num_frames = 8;
-        $width = 738;
-        $height = 738;
-
-        @ranks = (1, 2, 3, 5, 10, 20, 30);
-    }
-    elsif($file_name eq "tm.sort_ips.ap.gps.1.sub_CN.txt.3600.") {
-        $num_frames = 8;
-        $width = 410;
-        $height = 410;
-
-        @ranks = (1, 2, 3, 5, 10, 20, 30);
-    }
-    elsif($file_name eq "tm.sort_ips.ap.bgp.8.txt.3600.") {
-        $num_frames = 8;
-        $width = 421;
-        $height = 421;
-
-        @ranks = (1, 2, 3, 5, 10, 20, 30);
-    }
-    elsif($file_name eq "tm.sort_ips.ap.bgp.10.sub_CN.txt.3600.") {
-        $num_frames = 8;
-        $width = 403;
-        $height = 403;
-
-        @ranks = (1, 2, 3, 5, 10, 20, 30);
-    }
-    #######################
     
 
     @seeds = (1 .. 10);
     @opt_swap_mats = (0, 1, 3);
-    @drop_rates = (0.005, 0.01, 0.05);
+    @drop_rates = (0, 0.01, 0.05, 0.1, 0.2, 0.3);
     @group_sizes = (4);
-    @opt_types = (0, 1);
+    @opt_types = (0, 1, 2, 3, 4);
 
 
     for my $drop_rate (@drop_rates) {
@@ -180,6 +193,7 @@ for my $file_name (@files) {
                         my @mses;
                         my @maes;
                         my @ccs;
+                        my @ratios;
                         for my $seed (@seeds) {
                             my $this_file_name = "$input_dir/$func.$file_name.$num_frames.$width.$height.$group_size.$rank.$opt_swap_mat.$opt_type.$drop_rate.$seed.txt";
                             die "cannot find the file: $this_file_name\n" unless(-e $this_file_name);
@@ -193,6 +207,7 @@ for my $file_name (@files) {
                                 my $mse = $ret[0] + 0;
                                 my $mae = $ret[1] + 0;
                                 my $cc = $ret[2] + 0;
+                                my $ratio = $ret[3] + 0;
 
 
                                 ## XXX: figure out why nan
@@ -211,8 +226,9 @@ for my $file_name (@files) {
                                 push(@mses, $mse);
                                 push(@maes, $mae);
                                 push(@ccs, $cc);
+                                push(@ratios, $ratio);
 
-                                my $buf = "$file_name, $num_frames, $width, $height, $opt_swap_mat, $group_size, $rank, $opt_type, $drop_rate, $seed, $mse, $mae, $cc\n";
+                                my $buf = "$file_name, $num_frames, $width, $height, $opt_swap_mat, $group_size, $rank, $opt_type, $drop_rate, $seed, $mse, $mae, $cc, $ratio\n";
                                 print $buf;
                                 print FH_OUT $buf;
                             }
@@ -221,6 +237,11 @@ for my $file_name (@files) {
                         my $avg_mse = MyUtil::average(\@mses);
                         my $avg_mae = MyUtil::average(\@maes);
                         my $avg_cc = MyUtil::average(\@ccs);
+                        my $avg_ratio = MyUtil::average(\@ratios);
+
+                        my $buf = "$file_name, $num_frames, $width, $height, $opt_swap_mat, $group_size, $rank, $opt_type, $drop_rate, $avg_mse, $avg_mae, $avg_cc, $avg_ratio\n";
+                        print FH_MEAN_OUT $buf;
+
 
                         ## MSE
                         if($avg_mse < $best{TRACE}{"$file_name"}{DROP_RATE}{$drop_rate}{OPT_SWAP_MAT}{$opt_swap_mat}{MSE} or 
@@ -282,60 +303,27 @@ for my $file_name (@files) {
     }
 }
 close FH_OUT;
-
+close FH_MEAN_OUT;
 
 
 #############
 # Statistics
 #############
+open FH_BEST_OUT, "> $output_dir/$func.best.txt" or die $!;
 foreach my $trace (sort {$a cmp $b} (keys %{ $best{TRACE} })) {
     foreach my $drop_rate (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE} })) {
 
-        ## MSE
-        print "MSE:\n";
-        foreach my $opt_swap_mat (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_SWAP_MAT} })) {
-            print "$trace (drop $drop_rate), opt_swap_mat=$opt_swap_mat, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_SWAP_MAT}{$opt_swap_mat}{MSE}."\n";
-        }
-        foreach my $group_size (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{GROUP_SIZE} })) {
-            print "$trace (drop $drop_rate), group_size=$group_size, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{GROUP_SIZE}{$group_size}{MSE}."\n";
-        }
-        foreach my $opt_type (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_TYPE} })) {
-            print "$trace (drop $drop_rate), opt_type=$opt_type, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_TYPE}{$opt_type}{MSE}."\n";
-        }
-        foreach my $rank (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{RANK} })) {
-            print "$trace (drop $drop_rate), rank=$rank, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{RANK}{$rank}{MSE}."\n";
+        foreach my $metric ("MSE", "MAE", "CC") {
+            foreach my $param (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate} }) {
+                foreach my $param_val (sort {$a cmp $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{$param} }) ) {
+
+                    print "$trace (drop $drop_rate), $param=$param_val, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{$param}{$param_val}{$metric}."\n";
+                    print FH_BEST_OUT "$trace (drop $drop_rate), $param=$param_val, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{$param}{$param_val}{$metric}."\n";
+                }
+            }
         }
 
-        ## MAE
-        print "MAE:\n";
-        foreach my $opt_swap_mat (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_SWAP_MAT} })) {
-            print "$trace (drop $drop_rate), opt_swap_mat=$opt_swap_mat, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_SWAP_MAT}{$opt_swap_mat}{MAE}."\n";
-        }
-        foreach my $group_size (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{GROUP_SIZE} })) {
-            print "$trace (drop $drop_rate), group_size=$group_size, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{GROUP_SIZE}{$group_size}{MAE}."\n";
-        }
-        foreach my $opt_type (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_TYPE} })) {
-            print "$trace (drop $drop_rate), opt_type=$opt_type, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_TYPE}{$opt_type}{MAE}."\n";
-        }
-        foreach my $rank (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{RANK} })) {
-            print "$trace (drop $drop_rate), rank=$rank, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{RANK}{$rank}{MAE}."\n";
-        }
-
-        ## CC
-        print "CC:\n";
-        foreach my $opt_swap_mat (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_SWAP_MAT} })) {
-            print "$trace (drop $drop_rate), opt_swap_mat=$opt_swap_mat, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_SWAP_MAT}{$opt_swap_mat}{CC}."\n";
-        }
-        foreach my $group_size (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{GROUP_SIZE} })) {
-            print "$trace (drop $drop_rate), group_size=$group_size, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{GROUP_SIZE}{$group_size}{CC}."\n";
-        }
-        foreach my $opt_type (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_TYPE} })) {
-            print "$trace (drop $drop_rate), opt_type=$opt_type, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{OPT_TYPE}{$opt_type}{CC}."\n";
-        }
-        foreach my $rank (sort {$a <=> $b} (keys %{ $best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{RANK} })) {
-            print "$trace (drop $drop_rate), rank=$rank, ".$best{TRACE}{$trace}{DROP_RATE}{$drop_rate}{RANK}{$rank}{CC}."\n";
-        }
-        print "\n";
     }
     print "\n";
 }
+close FH_BEST_OUT;

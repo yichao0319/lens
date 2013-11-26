@@ -11,14 +11,20 @@
 %%   @option_type: determine the type of estimation
 %%      0: baseline
 %%      1: SRMF
+%%      2: svd
+%%      3: svd_base
+%%      4: nmf
+%%   @loss_rate: 
+%%      (0-1): drop elements for prediction
+%%      0    : compression
 %%
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc] = srmf_based_pred('/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/', 'TM_Airport_period5_', 12, 300, 300, 4, 5, 0, 1, 0.001, 1)
+%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 5, 0, 1, 0.05, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, loss_rate, seed)
+function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, loss_rate, seed)
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils/compressive_sensing');
     addpath('/u/yichao/anomaly_compression/utils');
@@ -28,28 +34,28 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
     %% DEBUG
     %% --------------------
     DEBUG0 = 0;
-    DEBUG1 = 1;
-    DEBUG2 = 1;
+    DEBUG1 = 0;
+    DEBUG2 = 0;
     DEBUG3 = 0; %% block index check
+    DEBUG_WRITE = 0;
 
-    if width ~= height
-        fprintf('width should be equal to height: %d, %d\n', width, height);
-        return;
-    end
+    % if width ~= height
+    %     fprintf('width should be equal to height: %d, %d\n', width, height);
+    %     return;
+    % end
 
 
     %% --------------------
     %% Constant
     %% --------------------
-    
+    ele_size = 32;  %% size of each elements in bits
+
 
     %% --------------------
     %% Variable
     %% --------------------
-    % input_TM_dir   = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
-    input_errs_dir = '/u/yichao/anomaly_compression/condor_data/subtask_inject_error/errs/';
-    input_4sq_dir  = '/u/yichao/anomaly_compression/condor_data/subtask_process_4sq/TM/';
-    
+    % input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
+    space = 0;
 
 
     %% --------------------
@@ -64,7 +70,7 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
     %% --------------------
     if DEBUG2, fprintf('read data matrix\n'); end
 
-    data = zeros(width, height, num_frames);
+    data = zeros(height, width, num_frames);
     for frame = [0:num_frames-1]
         if DEBUG0, fprintf('  frame %d\n', frame); end
 
@@ -73,7 +79,7 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
         if DEBUG0, fprintf('    file = %s\n', this_matrix_file); end
         
         tmp = load(this_matrix_file);
-        data(:,:,frame+1) = tmp(1:width, 1:height);
+        data(:,:,frame+1) = tmp(1:height, 1:width);
     end
     sx = size(data(:,:,1));
     nx = prod(sx);
@@ -85,14 +91,19 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
     if DEBUG2, fprintf('drop elements\n'); end
 
     M = ones(size(data));
-    num_missing = ceil(nx * loss_rate);
-    for f = [1:num_frames]
-        if DEBUG0, fprintf('  frame %d\n', f); end
+    if loss_rate > 0
+        %% prediction
+        num_missing = ceil(nx * loss_rate);
+        for f = [1:num_frames]
+            if DEBUG0, fprintf('  frame %d\n', f); end
 
-        ind = randperm(nx);
-        tmp = M(:,:,f);
-        tmp(ind(1:num_missing)) = 0;
-        M(:,:,f) = tmp;
+            ind = randperm(nx);
+            tmp = M(:,:,f);
+            tmp(ind(1:num_missing)) = 0;
+            M(:,:,f) = tmp;
+        end
+    else
+        %% compression
     end
 
 
@@ -107,42 +118,55 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
 
     if option_swap_mat == 0
         %% 0: original matrix
-        mapping = [1:width];
+        mapping_rows = [1:height];
+        mapping_cols = [1:width];
     elseif option_swap_mat == 1
         %% 1: randomize raw and col
-        mapping = randperm(width);
+        mapping_rows = randperm(height);
+        mapping_cols = randperm(width);
     elseif option_swap_mat == 2
-        %% 2: geo
-        [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
-        if DEBUG0
-            fprintf('  size of location: %d, %d\n', size(location));
-            fprintf('  size of mass: %d, %d\n', size(mass));
-        end
+        %% 2: geo -- only for 4sq TM
+        % [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
+        % if DEBUG0
+        %     fprintf('  size of location: %d, %d\n', size(location));
+        %     fprintf('  size of mass: %d, %d\n', size(mass));
+        % end
         
-        mapping = sort_by_lat_lng(location, width, height);
+        % mapping = sort_by_lat_lng(location, width, height);
 
     elseif option_swap_mat == 3
         %% 3: correlated coefficient
-        tmp = reshape(data, width, []);
-        if DEBUG1
-            fprintf('  size of the whole matrix: %d, %d\n', size(tmp));
-        end
         
-        coef = corrcoef(tmp');
-        mapping = sort_by_coef(coef, width, height);
+        tmp_rows = reshape(data, height, []);
+        tmp_cols = zeros(height*num_frames, width);
+        for f = [1:num_frames]
+            tmp_cols( (f-1)*height+1:f*height, : ) = data(:,:,f);
+        end
+
+        %% corrcoef: rows=obervations, col=features
+        coef_rows = corrcoef(tmp_rows');
+        coef_cols = corrcoef(tmp_cols);
+
+        mapping_rows = sort_by_coef(coef_rows);
+        mapping_cols = sort_by_coef(coef_cols);
+
+    elseif option_swap_mat == 4
+        %% 4: popularity
+        error('swap according to popularity: not done yet\n');
+        
     end
 
-    %% update the data matrix and ground truth according to the mapping
+    %% update the data matrix according to the mapping
     for f = [1:num_frames]
-        data(:,:,f) = map_matrix(data(:,:,f), mapping);
-        M(:,:,f)    = map_matrix(M(:,:,f), mapping);
+        data(:,:,f) = map_matrix(data(:,:,f), mapping_rows, mapping_cols);
+        M(:,:,f)    = map_matrix(M(:,:,f), mapping_rows, mapping_cols);
     end
 
     if DEBUG1, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
     
 
     compared_data = data;
-    compared_data(~M) = 0;
+    % compared_data(~M) = 0;
 
 
     %% --------------------
@@ -176,6 +200,10 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
         if option_type == 0
             %% baseline
             est_group = EstimateBaseline(A, b, sx);
+
+            %% space
+            space = space + (prod(size(A)) + prod(size(b))) * ele_size;
+
         elseif option_type == 1
             %% SRMF
             config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, lambda, true);
@@ -183,6 +211,39 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
 
             est_group = tensorprod(u4, v4, w4);
             est_group = max(0, est_group);
+
+            %% space
+            space = space + (prod(size(u4)) + prod(size(v4)) + prod(size(w4))) * ele_size;
+
+        elseif option_type == 2
+            %% svd
+            [u,v,w] = FactTensorACLS(this_group, this_rank, this_group_M, false, lambda, 50, 1e-8, 0);
+            
+            est_group = tensorprod(u,v,w);
+            est_group = max(0, est_group);
+
+            %% space
+            space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
+
+        elseif option_type == 3
+            %% svd_base
+            BaseX = EstimateBaseline(A, b, sx);
+            [u,v,w] = FactTensorACLS(this_group-BaseX, this_rank, this_group_M, false, lambda, 50, 1e-8, 0);
+
+            est_group = tensorprod(u,v,w) + BaseX;
+            est_group = max(0, est_group);
+
+            %% space
+            space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
+
+        elseif option_type == 4
+            %% nmf
+            [u,v,w] = ntf(this_group, this_rank, this_group_M, 'L2', 200, lambda);
+            est_group = tensorprod(u,v,w);
+            est_group = max(0, est_group);
+
+            %% space
+            space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
         end
         
         compared_data(:, :, gop_s:gop_e) = est_group;
@@ -191,10 +252,28 @@ function [mse, mae, cc] = srmf_based_pred(input_TM_dir, filename, num_frames, wi
 
     meanX2 = mean(data(:).^2);
     meanX = mean(data(:));
-    mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
-    mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
-    cc  = corrcoef(data(~M),max(0,compared_data(~M)));
-    cc  = cc(1,2);
+    
+    if loss_rate > 0
+        %% prediction
+        mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
+        mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
+        cc  = corrcoef(data(~M),max(0,compared_data(~M)));
+        cc  = cc(1,2);
+    else
+        %% compression
+        mse = mean(( data(:) - max(0,compared_data(:)) ).^2) / meanX2;
+        mae = mean(abs((data(:) - max(0,compared_data(:))))) / meanX;
+        cc  = corrcoef(data(:),max(0,compared_data(:)));
+        cc  = cc(1,2);
+    end
+    ratio = space / (width*height*num_frames*ele_size);
+
+    fprintf('%f, %f, %f, %f', mse, mae, cc, ratio);
+
+
+    if DEBUG_WRITE == 1
+        dlmwrite('tmp.txt', [find(M==0), data(~M), max(0,compared_data(~M))]);
+    end
 end
 
 
@@ -206,23 +285,23 @@ end
 %%    a vector to map venues to the other
 %%    e.g. [4, 3, 1, 2] means mapping 1->4, 2->3, 3->1, 4->2
 %%
-function [new_mat] = map_matrix(mat, mapping)
+function [new_mat] = map_matrix(mat, mapping_rows, mapping_cols)
     new_mat = zeros(size(mat));
-    new_mat(mapping, :) = mat;
+    new_mat(mapping_rows, :) = mat;
     tmp = new_mat;
-    new_mat(:, mapping) = tmp;
+    new_mat(:, mapping_cols) = tmp;
 end
 
 
 %% find_ind: function description
-function [map_ind] = find_mapping_ind(ind, width, height, mapping)
-    y = mod(ind-1, height) + 1;
-    x = floor((ind-1)/height) + 1;
+% function [map_ind] = find_mapping_ind(ind, width, height, mapping)
+%     y = mod(ind-1, height) + 1;
+%     x = floor((ind-1)/height) + 1;
 
-    x2 = mapping(x);
-    y2 = mapping(y);
-    map_ind = (x2 - 1) * height + y2;
-end
+%     x2 = mapping(x);
+%     y2 = mapping(y);
+%     map_ind = (x2 - 1) * height + y2;
+% end
 
 
 %% -------------------------------------
@@ -230,39 +309,39 @@ end
 %% @input location: 
 %%    a Nx2 matrix to represent the (lat, lng) of N venues
 %%
-function [mapping] = sort_by_lat_lng(location, width, height)
-    mapping = ones(1, width);
-    tmp = 2:width;
-    src = 1;
-    src_ind = 2;
-    while length(tmp) > 0
-        min_dist = -1;
-        min_dist_dst = 0;
-        min_dist_ind = 0;
+% function [mapping] = sort_by_lat_lng(location, width, height)
+%     mapping = ones(1, width);
+%     tmp = 2:width;
+%     src = 1;
+%     src_ind = 2;
+%     while length(tmp) > 0
+%         min_dist = -1;
+%         min_dist_dst = 0;
+%         min_dist_ind = 0;
 
-        ind = 0;
-        for dst = tmp
-            ind = ind + 1;
-            dist = pos2dist(location(src,1), location(src,2), location(dst,1), location(dst,2), 2);
+%         ind = 0;
+%         for dst = tmp
+%             ind = ind + 1;
+%             dist = pos2dist(location(src,1), location(src,2), location(dst,1), location(dst,2), 2);
 
-            if (min_dist == -1) | (min_dist > dist) 
-                min_dist = dist;
-                min_dist_dst = dst;
-                min_dist_ind = ind;
-            end
-        end
+%             if (min_dist == -1) | (min_dist > dist) 
+%                 min_dist = dist;
+%                 min_dist_dst = dst;
+%                 min_dist_ind = ind;
+%             end
+%         end
 
-        if tmp(min_dist_ind) ~= min_dist_dst
-            fprintf('min dist dst does not match: %d, %d\n', tmp(min_dist_ind), min_dist_dst);
-            return;
-        end
+%         if tmp(min_dist_ind) ~= min_dist_dst
+%             fprintf('min dist dst does not match: %d, %d\n', tmp(min_dist_ind), min_dist_dst);
+%             return;
+%         end
 
-        mapping(src_ind) = min_dist_dst;
-        src = min_dist_dst;
-        src_ind = src_ind + 1;
-        tmp(min_dist_ind) = [];
-    end
-end
+%         mapping(src_ind) = min_dist_dst;
+%         src = min_dist_dst;
+%         src_ind = src_ind + 1;
+%         tmp(min_dist_ind) = [];
+%     end
+% end
 
 
 %% -------------------------------------
@@ -270,17 +349,18 @@ end
 %% @input coef: 
 %%    a NxN matrix to represent the correlation coefficient of N venues
 %%
-function [mapping] = sort_by_coef(coef, width, height)
-    mapping = ones(1, width);
-    tmp = 2:width;
+function [mapping] = sort_by_coef(coef)
+    sx = size(coef, 1);
+    mapping = ones(1, sx);
+    tmp = 2:sx;  %% list of non-selected venues
     src = 1;
-    src_ind = 2;
+    src_ind = 2; %% index to mpaaing
     while length(tmp) > 0
         max_coef = -1;
         max_coef_dst = 0;
         max_coef_ind = 0;
 
-        ind = 0;
+        ind = 0;  %% index to tmp
         for dst = tmp
             ind = ind + 1;
             this_coef = coef(src, dst);
@@ -294,7 +374,7 @@ function [mapping] = sort_by_coef(coef, width, height)
 
         if tmp(max_coef_ind) ~= max_coef_dst
             fprintf('max coef dst does not match: %d, %d\n', tmp(max_coef_ind), max_coef_dst);
-            return;
+            error('exit');
         end
 
         mapping(src_ind) = max_coef_dst;

@@ -6,13 +6,13 @@ Universe = vanilla
 
 executable = /bin/bash
 arguments = tmp.srmf_based_pred.XXX.sh
-Requirements = (ARCH == "X86_64")
-Requirements = Memory >= 64
+Requirements = (ARCH == "X86_64") && (Memory >= 64)
+# Requirements = (ARCH == "INTEL") && (Memory >= 64)
 Rank = Memory >= 128
 
 
 Error = /u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/log/srmf_based_pred.XXX.err
 Output = /u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/log/srmf_based_pred.XXX.txt
-Log = /u/yichao/anomaly_compression/condor_data/subtask_mpeg/condor/log/srmf_based_pred.XXX.log
+Log = /u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/log/srmf_based_pred.XXX.log
 
 Queue 1
