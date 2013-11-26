@@ -32,7 +32,7 @@ my $DEBUG3 = 1; ## print output
 #############
 # Variables
 #############
-my $input_dir  = "../processed_data/subtask_parse_sjtu_wifi/text";
+my $input_dir  = "../condor_data/subtask_parse_sjtu_wifi/text";
 my $output_dir = "../processed_data/subtask_parse_sjtu_wifi/ip_info";
 
 my %ip_info = ();

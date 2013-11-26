@@ -7,9 +7,11 @@ steps:
      update IP to GEO and AS table
 4. summarize_geo_asn_table.pl
      gather multiple tables from above and generate 1 single table
-5. sort_ips.pl
+5. gen_trace_summary.pl
+     preprocess the trace, summarize src->dst info per second
+6. sort_ips.pl
      sort and group IPs accordingly
-6. gen_tm.pl
+7. gen_tm.pl
      according to the sorting result, generate TM
-
-
+8. tm_top.m
+     select the most popular k venues

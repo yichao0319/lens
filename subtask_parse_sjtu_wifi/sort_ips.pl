@@ -10,7 +10,6 @@
 ##      b) gps: group by lat lng
 ##         -res: resolution
 ##      c) bgp: group by BGP prefix
-##         -mask: IP mask
 ##      d) ip: group by ip
 ##         -mask: IP mask
 ##   2. -other: for other machines
@@ -18,7 +17,6 @@
 ##      a) gps: group by lat lng
 ##         -res: resolution
 ##      b) bgp: group by BGP prefix
-##         -mask: IP mask
 ##      c) country: group by country code
 ##      d) ip: group by ip
 ##         -mask: IP mask
@@ -29,10 +27,10 @@
 ##
 ## - e.g.
 ##      perl sort_ips.pl -sjtu ap -other country
-##      perl sort_ips.pl -sjtu ap -other gps -res 4
+##      perl sort_ips.pl -sjtu ap -other gps -res 5
 ##      perl sort_ips.pl -sjtu ap -other gps -res 1 -sub CN
-##      perl sort_ips.pl -sjtu ap -other bgp -mask 10 -sub CN
-##      perl sort_ips.pl -sjtu ap -other bgp -mask 8
+##      perl sort_ips.pl -sjtu ap -other bgp -sub CN
+##      perl sort_ips.pl -sjtu ap -other bgp
 ##
 ##########################################
 
@@ -112,9 +110,9 @@ if($DEBUG1) {
 if($sjtu eq "gps" or $other eq "gps") {
     die "Group by gps, res should not be 0\n" if($res == 0);
 }
-if($sjtu eq "bgp" or $other eq "bgp") {
-    die "Group by bgp, mask should not be 0\n" if($mask == 0);
-}
+# if($sjtu eq "bgp" or $other eq "bgp") {
+#     die "Group by bgp, mask should not be 0\n" if($mask == 0);
+# }
 
 # exit;
 
@@ -240,7 +238,8 @@ while(<FH>) {
                 # my @bgp_bytes = ($1, $2, $3, $4, $5);
                 # $group = join(".", @bgp_bytes[0 .. int($mask/8)-1]);
 
-                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                # $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                $group = $bgp;
                 print "  $bgp -> group=$group\n" if($DEBUG0);
             }
             else {
@@ -301,7 +300,8 @@ while(<FH>) {
             if($bgp =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/) {
                 # my @bgp_bytes = ($1, $2, $3, $4, $5);
 
-                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                # $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                $group = $bgp;
                 print "  $bgp -> group=$group\n" if($DEBUG0);
             }
             else {
@@ -339,7 +339,7 @@ my $cur_lat = -1;
 my $cur_lng = -1;
 if($sjtu eq "gps" or $sjtu eq "bgp") {
     if($sjtu eq "gps") { $output_name .= ".$sjtu.$res"; }
-    elsif($sjtu eq "bgp") { $output_name .= ".$sjtu.$mask"; }
+    elsif($sjtu eq "bgp") { $output_name .= ".$sjtu"; }
 
     my @tmp_grps = keys %{ $group_info{SJTU_GROUP} };
 
@@ -385,16 +385,19 @@ elsif($sjtu eq "ap") {
     }
 }
 
+print "\n";
+print "  # sjtu index = $cur_ind\n";
 
 ################
 ## sort other group
 ################
 print "sort other group\n" if($DEBUG2);
 
+$cur_ind = 1;
 if($other eq "gps" or $other eq "country" or $other eq "bgp") {
     if   ($other eq "gps")     { $output_name .= ".$other.$res"; }
     elsif($other eq "country") { $output_name .= ".$other"; }
-    elsif($other eq "bgp")     { $output_name .= ".$other.$mask"; }
+    elsif($other eq "bgp")     { $output_name .= ".$other"; }
 
     my @tmp_grps = keys %{ $group_info{OTHER_GROUP} };
 
@@ -432,6 +435,7 @@ if($other eq "gps" or $other eq "country" or $other eq "bgp") {
     }
 }
 
+print "  # other index = $cur_ind\n";
 
 if($subset ne "") {
     $output_name .= ".sub_$subset";
@@ -458,7 +462,7 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             die "wrong sjtu-gps group name: $group\n" unless(exists $group_info{SJTU_GROUP}{$group});
 
             my $index = $group_info{SJTU_GROUP}{$group}{IND};
-            print FH "$ip, $index\n";
+            print FH "0, $ip, $index\n";
         }
         elsif($sjtu eq "ap") {
             my $ap_mac = $account_info{USER_IP}{$ip}{AP_MAC};
@@ -469,7 +473,7 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             die "wrong sjtu-ap group name: $group\n" unless(exists $group_info{SJTU_GROUP}{$group});
 
             my $index = $group_info{SJTU_GROUP}{$group}{IND};
-            print FH "$ip, $index\n";
+            print FH "0, $ip, $index\n";
         }
         elsif($sjtu eq "bgp") {
             next unless(exists $ip_info{IP}{$ip}{BGP_PREFIX} and $ip_info{IP}{$ip}{BGP_PREFIX} ne "");
@@ -480,7 +484,8 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             if($bgp =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/) {
                 # my @bgp_bytes = ($1, $2, $3, $4, $5);
 
-                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                # $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                $group = $bgp;
                 print "  $bgp -> group=$group\n" if($DEBUG0);
             }
             else {
@@ -488,7 +493,7 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             }
             
             my $index = $group_info{SJTU_GROUP}{$group}{IND};
-            print FH "$ip, $index\n";
+            print FH "0, $ip, $index\n";
         }
     }
     ###################
@@ -503,14 +508,14 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             die "wrong other-gps group name: $group\n" unless(exists $group_info{OTHER_GROUP}{$group});
 
             my $index = $group_info{OTHER_GROUP}{$group}{IND};
-            print FH "$ip, $index\n";
+            print FH "1, $ip, $index\n";
         }
         elsif($other eq "country") {
             my $group = $ip_info{IP}{$ip}{COUNTRY_CODE};
             next if($group eq "");
 
             my $index = $group_info{OTHER_GROUP}{$group}{IND};
-            print FH "$ip, $index\n";
+            print FH "1, $ip, $index\n";
         }
         elsif($other eq "bgp") {
             next unless(exists $ip_info{IP}{$ip}{BGP_PREFIX} and $ip_info{IP}{$ip}{BGP_PREFIX} ne "");
@@ -521,7 +526,8 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             if($bgp =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/) {
                 # my @bgp_bytes = ($1, $2, $3, $4, $5);
 
-                $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                # $group = int(((($1 * 256 + $2) * 256 + $3) * 256 + $4) / (2**(32 - $mask)));
+                $group = $bgp;
                 print "  $bgp -> group=$group\n" if($DEBUG0);
             }
             else {
@@ -529,7 +535,7 @@ foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
             }
             
             my $index = $group_info{OTHER_GROUP}{$group}{IND};
-            print FH "$ip, $index\n";
+            print FH "1, $ip, $index\n";
         }
     }
 }
