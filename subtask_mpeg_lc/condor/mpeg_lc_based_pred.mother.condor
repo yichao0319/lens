@@ -6,9 +6,9 @@ Universe = vanilla
 
 executable = /bin/bash
 arguments = tmp.mpeg_lc_based_pred.XXX.sh
-Requirements = (ARCH == "X86_64")
-Requirements = Memory >= 32
-Rank = Memory >= 64
+# Requirements = (ARCH == "X86_64") && (Memory >= 64)
+Requirements = (ARCH == "INTEL") && (Memory >= 64)
+Rank = Memory >= 128
 
 
 Error = /u/yichao/anomaly_compression/condor_data/subtask_mpeg_lc/condor/log/mpeg_lc_based_pred.XXX.err
