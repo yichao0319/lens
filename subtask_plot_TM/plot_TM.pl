@@ -76,7 +76,7 @@ print "get all TM files\n" if($DEBUG2);
 
 opendir (DIR, $tm_dir) or die $!;
 while (my $file = readdir(DIR)) {
-    next unless($file =~ /$tm_file/);
+    next unless($file =~ /^$tm_file/);
     print "$tm_dir/$file\n" if($DEBUG1);
 
     #####
@@ -112,7 +112,7 @@ while (my $file = readdir(DIR)) {
         chomp;
         $line_cnt ++;
 
-        my @tmp = split(/, /, $_);
+        my @tmp = split(/,/, $_);
 
         $min_size = scalar(@tmp);
         $min_size = $matrix_size if($matrix_size < $min_size);
@@ -120,14 +120,14 @@ while (my $file = readdir(DIR)) {
     }
     close FH_W;
     close FH;
-    print "  size = $min_size\n" if($DEBUG1);
+    print "  size = $min_size x $line_cnt\n" if($DEBUG1);
 
 
     my $escaped_tm_dir = $tm_dir."/";
     $escaped_tm_dir =~ s{\/}{\\\/}g;
     my $escaped_fig_dir = $figure_dir."/";
     $escaped_fig_dir =~ s{\/}{\\\/}g;
-    my $cmd = "sed 's/DATA_DIR/$escaped_tm_dir/g; s/FIG_DIR/$escaped_fig_dir/g; s/FILE_NAME/$file/g; s/FIG_NAME/$file/g; s/X_LABEL/src/g; s/Y_LABEL/dst/g; s/DEGREE/-45/g; s/X_RANGE_S/0/g; s/X_RANGE_E/$min_size-1/g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/$min_size-1/g; s/CBRANGE_S/0/g; s/CBRANGE_E/$max_color/g; s/CBLABEL//g; ' plot_TM.mother.plot > tmp.plot_TM.plot";
+    my $cmd = "sed 's/DATA_DIR/$escaped_tm_dir/g; s/FIG_DIR/$escaped_fig_dir/g; s/FILE_NAME/tmp.$file/g; s/FIG_NAME/$file/g; s/X_LABEL/src/g; s/Y_LABEL/dst/g; s/DEGREE/-45/g; s/X_RANGE_S/0/g; s/X_RANGE_E/$min_size-1/g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/$line_cnt-1/g; s/CBRANGE_S/0/g; s/CBRANGE_E/$max_color/g; s/CBLABEL//g; ' plot_TM.mother.plot > tmp.plot_TM.plot";
     `$cmd`;
 
     $cmd = "gnuplot tmp.plot_TM.plot";
