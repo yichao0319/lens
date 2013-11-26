@@ -38,8 +38,6 @@ my $READ_INVALID = 1;
 my $READ_SUMMARY = 0;
 my $READ_IPS     = 1;
 
-my $NUM_PART     = 60;
-
 
 #############
 # Variables
@@ -52,22 +50,26 @@ my $ips_dir     = "/u/yichao/anomaly_compression/condor_data/subtask_parse_sjtu_
 my $sum_ip_info  = "ip_info.txt";
 my $table_file   = "ip_geo_as_table.txt";
 my $invalid_file = "ip_geo_as_invalid.txt";
-my $ips_file     = "all_ips.txt";
+my $ips_file; #     = "all_ips.txt";
 
 my $index;
 
 my %ip_info = ();
 my %invalid_info = ();
 
+my %new_ip_info = ();
+my %new_invalid_info = ();
+
 
 #############
 # check input
 #############
-if(@ARGV != 1) {
+if(@ARGV != 2) {
     print "wrong number of input: ".@ARGV."\n";
     exit;
 }
 $index = $ARGV[0];
+$ips_file = $ARGV[1];
 
 
 #############
@@ -214,8 +216,17 @@ if($READ_IPS) {
         ###################
         ## skip known IPs
         ###################
-        next if(exists $ip_info{IP}{$ip});
-        next if(exists $invalid_info{IP}{$ip});
+        next if(exists $new_ip_info{IP}{$ip});
+        next if(exists $new_invalid_info{IP}{$ip});
+
+        if(exists $ip_info{IP}{$ip}) {
+            $new_ip_info{IP}{$ip} = $ip_info{IP}{$ip};
+            next;
+        }
+        if(exists $invalid_info{IP}{$ip}) {
+            $new_invalid_info{IP}{$ip} = $invalid_info{IP}{$ip};
+            next;
+        }
 
 
         ###################
@@ -237,19 +248,19 @@ if($READ_IPS) {
         ## check if this IP is valid
         if( ($lat != 0 or $lng != 0) and $asn ne "NA") {
             ## valid
-            $ip_info{IP}{$ip}{LAT} = $lat;
-            $ip_info{IP}{$ip}{LNG} = $lng;
-            $ip_info{IP}{$ip}{ASN} = $asn;
-            $ip_info{IP}{$ip}{BGP_PREFIX} = $bgp_prefix;
-            $ip_info{IP}{$ip}{COUNTRY_CODE} = $country_code;
-            $ip_info{IP}{$ip}{COUNTRY_NAME} = $country_name;
-            $ip_info{IP}{$ip}{REGION_CODE} = $region_code;
-            $ip_info{IP}{$ip}{REGION_NAME} = $region_name;
-            $ip_info{IP}{$ip}{CITY} = $city;
-            $ip_info{IP}{$ip}{ZIP} = $zip;
-            $ip_info{IP}{$ip}{AREA} = $area_code;
-            $ip_info{IP}{$ip}{METRO} = $metro_code;
-            $ip_info{IP}{$ip}{REGISTRY} = $registry;
+            $new_ip_info{IP}{$ip}{LAT} = $lat;
+            $new_ip_info{IP}{$ip}{LNG} = $lng;
+            $new_ip_info{IP}{$ip}{ASN} = $asn;
+            $new_ip_info{IP}{$ip}{BGP_PREFIX} = $bgp_prefix;
+            $new_ip_info{IP}{$ip}{COUNTRY_CODE} = $country_code;
+            $new_ip_info{IP}{$ip}{COUNTRY_NAME} = $country_name;
+            $new_ip_info{IP}{$ip}{REGION_CODE} = $region_code;
+            $new_ip_info{IP}{$ip}{REGION_NAME} = $region_name;
+            $new_ip_info{IP}{$ip}{CITY} = $city;
+            $new_ip_info{IP}{$ip}{ZIP} = $zip;
+            $new_ip_info{IP}{$ip}{AREA} = $area_code;
+            $new_ip_info{IP}{$ip}{METRO} = $metro_code;
+            $new_ip_info{IP}{$ip}{REGISTRY} = $registry;
             print ".";
 
             $cnt ++;
@@ -262,21 +273,21 @@ if($READ_IPS) {
                 #############
                 print "update geo as table\n" if($DEBUG2);
                 open FH2, "> $table_dir/$table_file.$index.txt" or die $!;
-                foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
+                foreach my $ip (sort {$a cmp $b} (keys %{ $new_ip_info{IP} })) {
                     print FH2 join(", ", ($ip,
-                                         $ip_info{IP}{$ip}{LAT},
-                                         $ip_info{IP}{$ip}{LNG},
-                                         $ip_info{IP}{$ip}{ASN},
-                                         $ip_info{IP}{$ip}{BGP_PREFIX},
-                                         $ip_info{IP}{$ip}{COUNTRY_CODE},
-                                         $ip_info{IP}{$ip}{COUNTRY_NAME},
-                                         $ip_info{IP}{$ip}{REGION_CODE},
-                                         $ip_info{IP}{$ip}{REGION_NAME},
-                                         $ip_info{IP}{$ip}{CITY},
-                                         $ip_info{IP}{$ip}{ZIP},
-                                         $ip_info{IP}{$ip}{AREA},
-                                         $ip_info{IP}{$ip}{METRO},
-                                         $ip_info{IP}{$ip}{REGISTRY}) )."\n";
+                                         $new_ip_info{IP}{$ip}{LAT},
+                                         $new_ip_info{IP}{$ip}{LNG},
+                                         $new_ip_info{IP}{$ip}{ASN},
+                                         $new_ip_info{IP}{$ip}{BGP_PREFIX},
+                                         $new_ip_info{IP}{$ip}{COUNTRY_CODE},
+                                         $new_ip_info{IP}{$ip}{COUNTRY_NAME},
+                                         $new_ip_info{IP}{$ip}{REGION_CODE},
+                                         $new_ip_info{IP}{$ip}{REGION_NAME},
+                                         $new_ip_info{IP}{$ip}{CITY},
+                                         $new_ip_info{IP}{$ip}{ZIP},
+                                         $new_ip_info{IP}{$ip}{AREA},
+                                         $new_ip_info{IP}{$ip}{METRO},
+                                         $new_ip_info{IP}{$ip}{REGISTRY}) )."\n";
                 }
                 close FH2;
 
@@ -286,7 +297,7 @@ if($READ_IPS) {
                 #############
                 print "update invalid IPs\n" if($DEBUG2);
                 open FH2, "> $invalid_dir/$invalid_file.$index.txt" or die $!;
-                foreach my $ip (sort {$a cmp $b} (keys %{ $invalid_info{IP} })) {
+                foreach my $ip (sort {$a cmp $b} (keys %{ $new_invalid_info{IP} })) {
                     print FH2 "$ip\n";
                 }
                 close FH2;
@@ -297,7 +308,8 @@ if($READ_IPS) {
             ## invalid
             if($asn eq "NA") {
                 ## ensure the ip is invalid
-                $invalid_info{IP}{$ip} = 1;
+                $cnt ++;
+                $new_invalid_info{IP}{$ip} = 1;
             }
         }
     }
@@ -310,21 +322,21 @@ if($READ_IPS) {
 #############
 print "update geo as table\n" if($DEBUG2);
 open FH, "> $table_dir/$table_file.$index.txt" or die $!;
-foreach my $ip (sort {$a cmp $b} (keys %{ $ip_info{IP} })) {
+foreach my $ip (sort {$a cmp $b} (keys %{ $new_ip_info{IP} })) {
     print FH join(", ", ($ip,
-                         $ip_info{IP}{$ip}{LAT},
-                         $ip_info{IP}{$ip}{LNG},
-                         $ip_info{IP}{$ip}{ASN},
-                         $ip_info{IP}{$ip}{BGP_PREFIX},
-                         $ip_info{IP}{$ip}{COUNTRY_CODE},
-                         $ip_info{IP}{$ip}{COUNTRY_NAME},
-                         $ip_info{IP}{$ip}{REGION_CODE},
-                         $ip_info{IP}{$ip}{REGION_NAME},
-                         $ip_info{IP}{$ip}{CITY},
-                         $ip_info{IP}{$ip}{ZIP},
-                         $ip_info{IP}{$ip}{AREA},
-                         $ip_info{IP}{$ip}{METRO},
-                         $ip_info{IP}{$ip}{REGISTRY}) )."\n";
+                         $new_ip_info{IP}{$ip}{LAT},
+                         $new_ip_info{IP}{$ip}{LNG},
+                         $new_ip_info{IP}{$ip}{ASN},
+                         $new_ip_info{IP}{$ip}{BGP_PREFIX},
+                         $new_ip_info{IP}{$ip}{COUNTRY_CODE},
+                         $new_ip_info{IP}{$ip}{COUNTRY_NAME},
+                         $new_ip_info{IP}{$ip}{REGION_CODE},
+                         $new_ip_info{IP}{$ip}{REGION_NAME},
+                         $new_ip_info{IP}{$ip}{CITY},
+                         $new_ip_info{IP}{$ip}{ZIP},
+                         $new_ip_info{IP}{$ip}{AREA},
+                         $new_ip_info{IP}{$ip}{METRO},
+                         $new_ip_info{IP}{$ip}{REGISTRY}) )."\n";
 }
 close FH;
 
@@ -334,7 +346,7 @@ close FH;
 #############
 print "update invalid IPs\n" if($DEBUG2);
 open FH, "> $invalid_dir/$invalid_file.$index.txt" or die $!;
-foreach my $ip (sort {$a cmp $b} (keys %{ $invalid_info{IP} })) {
+foreach my $ip (sort {$a cmp $b} (keys %{ $new_invalid_info{IP} })) {
     print FH "$ip\n";
 }
 close FH;

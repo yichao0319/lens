@@ -5,10 +5,9 @@
 Universe = vanilla
 
 executable = /usr/bin/perl
-arguments = update_geo_asn_table.condor_version.pl INDEX
-Requirements = Memory >= 10
-Rank = Memory >= 16
+arguments = update_geo_asn_table.condor_version.pl INDEX ALL_IPS
 
+Requirements = (ARCH == "X86_64")
 
 Error = /u/yichao/anomaly_compression/condor_data/subtask_parse_sjtu_wifi/condor/log/update_geo_asn_table.INDEX.err
 Output = /u/yichao/anomaly_compression/condor_data/subtask_parse_sjtu_wifi/condor/log/update_geo_asn_table.INDEX.txt

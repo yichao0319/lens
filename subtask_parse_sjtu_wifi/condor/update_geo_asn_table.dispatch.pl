@@ -38,7 +38,7 @@ my $READ_INVALID = 1;
 my $READ_SUMMARY = 1;
 my $READ_IPS     = 1;
 
-my $NUM_PART     = 60;
+my $NUM_PART     = 500;
 
 
 #############
@@ -52,6 +52,7 @@ my $ips_dir     = "/u/yichao/anomaly_compression/condor_data/subtask_parse_sjtu_
 my $sum_ip_info  = "ip_info.txt";
 my $table_file   = "ip_geo_as_table.txt";
 my $invalid_file = "ip_geo_as_invalid.txt";
+# my $ips_file     = "all_ips_3g.txt";
 my $ips_file     = "all_ips.txt";
 
 my %ip_info = ();
@@ -79,17 +80,18 @@ if(@ARGV != 0) {
 print "partition all_ips.txt\n" if($DEBUG2);
 
 my $num_ips = `cat $ips_dir/$ips_file | wc -l` + 0;
-print "$num_ips\n";
+print "num: $num_ips\n";
 my $num_ips_per_share = ceil($num_ips / $NUM_PART);
 
 for my $i (0 .. $NUM_PART-1) {
     my $start = $i * $num_ips_per_share + 1;
     my $end   = ($i+1) * $num_ips_per_share;
+    print "> $start - $end\n";
 
     my $cmd = "cat $ips_dir/$ips_file | head -$end | tail -$num_ips_per_share > $ips_dir/$ips_file.$i.txt";
     `$cmd`;
 
-    $cmd = "sed 's/INDEX/$i/g;' update_geo_asn_table.mother.condor > tmp.update_geo_asn_table.$i.condor";
+    $cmd = "sed 's/INDEX/$i/g; s/ALL_IPS/$ips_file/g;' update_geo_asn_table.mother.condor > tmp.update_geo_asn_table.$i.condor";
     `$cmd`;
 
     $cmd = "condor_submit tmp.update_geo_asn_table.$i.condor";
