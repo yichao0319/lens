@@ -8,7 +8,7 @@
 %
 % Example: match('scene.pgm','book.pgm');
 
-function num = my_match(image1, image2, distRatio, f1, f2)
+function num = my_match(image1, image2, distRatio, f1, f2, best_match)
 
 % For efficiency in Matlab, it is cheaper to compute dot products between
 %  unit vectors rather than Euclidean distances.  Note that the ratio of 
@@ -32,7 +32,7 @@ end
 [im2, des2, loc2] = my_sift(image2);
 
 
-if size(loc1, 1) < 1 | size(loc2, 1) < 2
+if size(loc1, 1) < best_match | size(loc2, 1) < (best_match+1)
   num = 0;
   return;
 end
@@ -46,8 +46,8 @@ for i = 1 : size(des1,1)
    [vals,indx] = sort(acos(dotprods));  % Take inverse cosine and sort results
 
    % Check if nearest neighbor has angle less than distRatio times 2nd.
-   if (vals(1) < distRatio * vals(2))
-      match(i) = indx(1);
+   if (vals(best_match) < distRatio * vals(best_match+1))
+      match(i) = indx(best_match);
    else
       match(i) = 0;
    end

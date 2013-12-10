@@ -199,7 +199,8 @@ function [mse, mae, cc, ratio] = feature_match_based_pred(input_TM_dir, filename
             search_frame = int32(floor(search_frame / tmp_max * 255));
             
             
-            my_match(this_frame, search_frame, 0.6 , f1, f2);
+            % my_match(this_frame, search_frame, 0.6 , f1, f2, 1);
+            my_match(this_frame, search_frame, 0.85 , f1, f2, 2);
 
         end
 
