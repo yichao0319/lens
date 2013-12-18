@@ -4,27 +4,40 @@
 %%
 %% - Input:
 %%   @option_swap_mat: determine how to arrange rows and columns of TM
-%%      0: original matrix
-%%      1: randomize raw and col
-%%      2: geo
-%%      3: correlated coefficient
+%%      'org': original matrix
+%%      'rand': randomize raw and col
+%%      'geo': geo -- can only be used by 4sq TM matrix
+%%      'cc': correlation coefficient
 %%   @option_type: determine the type of estimation
-%%      0: baseline
-%%      1: SRMF
-%%      2: svd
-%%      3: svd_base
-%%      4: nmf
-%%   @loss_rate: 
-%%      (0-1): drop elements for prediction
+%%      'base': baseline alg
+%%      'srmf'
+%%      'srmf_knn'
+%%      'svd'
+%%      'svd_base'
+%%      'nmf'
+%%   @drop_ele_mode:
+%%      'elem': drop elements
+%%      'row': drop rows
+%%      'col': drop columns
+%%   @drop_mode:
+%%      'ind': drop independently
+%%      'syn': rand loss synchronized among elem_list
+%%   @elem_frac: 
+%%      (0-1): the fraction of elements in a frame 
 %%      0    : compression
+%%   @loss_rate: 
+%%      (0-1): the fraction of frames to drop
+%%   @burst_size: 
+%%      burst in time (i.e. frame)
 %%
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 5, 0, 1, 0.05, 1)
+%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 5, 'org', 'srmf', 'elem', 'ind', 0.2, 0.5, 1, 1)
+%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.002.bin60.sub.', 24, 120, 100, 4, 5, 'org', 'srmf', 'elem', 'ind', 0.2, 0.5, 1, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, loss_rate, seed)
+function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, seed)
     addpath('../utils/mirt_dctn');
     addpath('../utils/compressive_sensing');
     addpath('../utils');
@@ -90,20 +103,27 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     %% --------------------
     if DEBUG2, fprintf('drop elements\n'); end
 
-    M = ones(size(data));
-    if loss_rate > 0
-        %% prediction
-        num_missing = ceil(nx * loss_rate);
-        for f = [1:num_frames]
-            if DEBUG0, fprintf('  frame %d\n', f); end
+    % M = ones(size(data));
+    % if loss_rate > 0
+    %     %% prediction
+    %     num_missing = ceil(nx * loss_rate);
+    %     for f = [1:num_frames]
+    %         if DEBUG0, fprintf('  frame %d\n', f); end
 
-            ind = randperm(nx);
-            tmp = M(:,:,f);
-            tmp(ind(1:num_missing)) = 0;
-            M(:,:,f) = tmp;
-        end
+    %         ind = randperm(nx);
+    %         tmp = M(:,:,f);
+    %         tmp(ind(1:num_missing)) = 0;
+    %         M(:,:,f) = tmp;
+    %     end
+    % else
+    %     %% compression
+    % end
+    if elem_frac > 0
+        %% prediction
+        M = DropValues(sx(1), sx(2), num_frames, elem_frac, loss_rate, drop_ele_mode, drop_mode, burst_size);
     else
         %% compression
+        M = ones(size(data));
     end
 
 
@@ -116,15 +136,15 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     %% --------------------
     if DEBUG2, fprintf('swap matrix row and column\n'); end
 
-    if option_swap_mat == 0
+    if strcmp(option_swap_mat, 'org')
         %% 0: original matrix
         mapping_rows = [1:height];
         mapping_cols = [1:width];
-    elseif option_swap_mat == 1
+    elseif strcmp(option_swap_mat, 'rand')
         %% 1: randomize raw and col
         mapping_rows = randperm(height);
         mapping_cols = randperm(width);
-    elseif option_swap_mat == 2
+    elseif strcmp(option_swap_mat, 'geo')
         %% 2: geo -- only for 4sq TM
         % [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
         % if DEBUG0
@@ -134,7 +154,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         
         % mapping = sort_by_lat_lng(location, width, height);
 
-    elseif option_swap_mat == 3
+    elseif strcmp(option_swap_mat, 'cc')
         %% 3: correlated coefficient
         
         tmp_rows = reshape(data, height, []);
@@ -150,7 +170,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         mapping_rows = sort_by_coef(coef_rows);
         mapping_cols = sort_by_coef(coef_cols);
 
-    elseif option_swap_mat == 4
+    elseif strcmp(option_swap_mat, 'pop')
         %% 4: popularity
         error('swap according to popularity: not done yet\n');
         
@@ -197,14 +217,14 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
 
         [A, b] = XM2Ab(this_group, this_group_M);
 
-        if option_type == 0
+        if strcmpi(option_type, 'base')
             %% baseline
             est_group = EstimateBaseline(A, b, sx);
 
             %% space
             space = space + (prod(size(A)) + prod(size(b))) * ele_size;
 
-        elseif option_type == 1
+        elseif strcmpi(option_type, 'srmf')
             %% SRMF
             config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, lambda, true);
             [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, 1000, 100, 50);
@@ -215,7 +235,43 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             %% space
             space = space + (prod(size(u4)) + prod(size(v4)) + prod(size(w4))) * ele_size;
 
-        elseif option_type == 2
+        elseif strcmpi(option_type, 'srmf_knn')
+            %% SRMF + KNN
+            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, lambda, true);
+            [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, 1000, 100, 50);
+
+            est_group = tensorprod(u4, v4, w4);
+            est_group = max(0, est_group);
+
+
+            est_f = reshape(est_group, [], sx(n))';
+            Z = est_f;
+            f_M   = reshape(this_group_M, [], sx(n))';
+            % size(est_f)
+            
+            maxDist = 3;
+            EPS = 1e-3;
+            
+            for i = 1:group_size
+                for j = find(f_M(i,:) == 0)
+                    ind = find((f_M(i,:)==1) & (abs((1:(sx(1)*sx(2))) - j) <= maxDist));
+                    if (~isempty(ind))
+                        Y  = est_f(:,ind);
+                        C  = Y'*Y;
+                        nc = size(C,1);
+                        C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                        w  = C\(Y'*est_f(:,j));
+                        w  = reshape(w,1,nc);
+                        Z(i,j) = sum(est_f(i,ind).*w);
+                    end
+                end
+            end
+            est_group = reshape(Z', sx(1), sx(2), sx(3));
+
+            %% space
+            space = space + (prod(size(u4)) + prod(size(v4)) + prod(size(w4))) * ele_size;
+
+        elseif strcmpi(option_type, 'svd')
             %% svd
             [u,v,w] = FactTensorACLS(this_group, this_rank, this_group_M, false, lambda, 50, 1e-8, 0);
             
@@ -225,7 +281,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             %% space
             space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
 
-        elseif option_type == 3
+        elseif strcmpi(option_type, 'svd_base')
             %% svd_base
             BaseX = EstimateBaseline(A, b, sx);
             [u,v,w] = FactTensorACLS(this_group-BaseX, this_rank, this_group_M, false, lambda, 50, 1e-8, 0);
@@ -236,7 +292,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             %% space
             space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
 
-        elseif option_type == 4
+        elseif strcmpi(option_type, 'nmf')
             %% nmf
             [u,v,w] = ntf(this_group, this_rank, this_group_M, 'L2', 200, lambda);
             est_group = tensorprod(u,v,w);
@@ -244,16 +300,18 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
 
             %% space
             space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
+        else
+            error('wrong option type');
         end
         
         compared_data(:, :, gop_s:gop_e) = est_group;
     end
 
 
-    meanX2 = mean(data(:).^2);
-    meanX = mean(data(:));
+    meanX2 = mean(data(~M).^2);
+    meanX = mean(data(~M));
     
-    if loss_rate > 0
+    if elem_frac > 0
         %% prediction
         mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
         mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
@@ -268,7 +326,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     end
     ratio = space / (width*height*num_frames*ele_size);
 
-    fprintf('%f, %f, %f, %f', mse, mae, cc, ratio);
+    fprintf('%f, %f, %f, %f\n', mse, mae, cc, ratio);
 
 
     if DEBUG_WRITE == 1

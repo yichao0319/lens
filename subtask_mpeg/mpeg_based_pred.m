@@ -4,9 +4,9 @@
 %%
 %% - Input:
 %%   @option_delta: options to calculate delta
-%%      1: sum of absolute diff
-%%      2: mean square error (MSE)
-%%      3: mean absolute error (MAE)
+%%      'diff': sum of absolute diff
+%%      'mse': mean square error (MSE)
+%%      'mae': mean absolute error (MAE)
 %%   @option_frames: determine which realted frames to compare
 %%      -m: the previous m-th frame
 %%      0 : current frame
@@ -23,21 +23,37 @@
 %%      18 7  3  6  15
 %%      23 17 11 16 22
 %%   @option_swap_mat: determine how to arrange rows and columns of TM
-%%      0: original matrix
-%%      1: randomize raw and col
-%%      2: geo
-%%      3: correlated coefficient
-%%   @loss_rate: 
-%%      (0-1): drop elements for prediction
+%%      'org': original matrix
+%%      'rand': randomize raw and col
+%%      'geo': geo -- can only be used by 4sq TM matrix
+%%      'cc': correlation coefficient
+%%   @option_fill_in:
+%%      'fill': fill in the missing values
+%%      'no_fill': skip the missing values
+%%   @drop_ele_mode:
+%%      'elem': drop elements
+%%      'row': drop rows
+%%      'col': drop columns
+%%   @drop_mode:
+%%      'ind': drop independently
+%%      'syn': rand loss synchronized among elem_list
+%%   @elem_frac: 
+%%      (0-1): the fraction of elements in a frame 
 %%      0    : compression
+%%   @loss_rate: 
+%%      (0-1): the fraction of frames to drop
+%%   @burst_size: 
+%%      burst in time (i.e. frame)
 %%
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc, ratio] = mpeg_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 22, 40, 1, [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 0, 0.05, 1)
+%%     [mse, mae, cc, ratio] = mpeg_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 22, 40, 'diff', [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 'org', 'fill', 'elem', 'ind', 0.2, 0.5, 1, 1)
+%%     [mse, mae, cc, ratio] = mpeg_based_pred('../processed_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.002.bin60.sub.', 24, 120, 100, 12, 10, 'diff', [-2, -1, 0, 1, 2], [0,  8, 8, 8, 0], 'org', 'fill', 'elem', 'ind', 0.2, 0.5, 1, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, option_delta, option_frames, option_blocks, option_swap_mat, loss_rate, seed)
+function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, option_delta, option_frames, option_blocks, option_swap_mat, option_fill_in, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, seed)
+    addpath('../utils/compressive_sensing');
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -102,20 +118,27 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
     %% --------------------
     if DEBUG2, fprintf('drop elements\n'); end
 
-    M = ones(size(data));
-    if loss_rate > 0
-        %% prediction
-        num_missing = ceil(nx * loss_rate);
-        for f = [1:num_frames]
-            if DEBUG0, fprintf('  frame %d\n', f); end
+    % M = ones(size(data));
+    % if loss_rate > 0
+    %     %% prediction
+    %     num_missing = ceil(nx * loss_rate);
+    %     for f = [1:num_frames]
+    %         if DEBUG0, fprintf('  frame %d\n', f); end
 
-            ind = randperm(nx);
-            tmp = M(:,:,f);
-            tmp(ind(1:num_missing)) = 0;
-            M(:,:,f) = tmp;
-        end
+    %         ind = randperm(nx);
+    %         tmp = M(:,:,f);
+    %         tmp(ind(1:num_missing)) = 0;
+    %         M(:,:,f) = tmp;
+    %     end
+    % else
+    %     %% compression
+    % end
+    if elem_frac > 0
+        %% prediction
+        M = DropValues(sx(1), sx(2), num_frames, elem_frac, loss_rate, drop_ele_mode, drop_mode, burst_size);
     else
         %% compression
+        M = ones(size(data));
     end
 
 
@@ -128,15 +151,15 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
     %% --------------------
     if DEBUG2, fprintf('swap matrix row and column\n'); end
 
-    if option_swap_mat == 0
+    if strcmp(option_swap_mat, 'org')
         %% 0: original matrix
         mapping_rows = [1:height];
         mapping_cols = [1:width];
-    elseif option_swap_mat == 1
+    elseif strcmp(option_swap_mat, 'rand')
         %% 1: randomize raw and col
         mapping_rows = randperm(height);
         mapping_cols = randperm(width);
-    elseif option_swap_mat == 2
+    elseif strcmp(option_swap_mat, 'geo')
         %% 2: geo -- only for 4sq TM
         % [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
         % if DEBUG0
@@ -146,7 +169,7 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
         
         % mapping = sort_by_lat_lng(location, width, height);
 
-    elseif option_swap_mat == 3
+    elseif strcmp(option_swap_mat, 'cc')
         %% 3: correlated coefficient
         
         tmp_rows = reshape(data, height, []);
@@ -162,7 +185,7 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
         mapping_rows = sort_by_coef(coef_rows);
         mapping_cols = sort_by_coef(coef_cols);
 
-    elseif option_swap_mat == 4
+    elseif strcmp(option_swap_mat, 'pop')
         %% 4: popularity
         error('swap according to popularity: not done yet\n');
         
@@ -180,7 +203,7 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
     %% --------------------    
     %% first guess of missing elements
     %% --------------------
-    if loss_rate > 0
+    if elem_frac > 0
         %% prediction
 
         %% by 0s
@@ -262,14 +285,26 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
 
                         prev_block = zeros(block_height, block_width);
                         prev_block(1:(h2_e-h2_s+1), 1:(w2_e-w2_s+1)) = compared_data(h2_s:h2_e, w2_s:w2_e, comp_frame);
-                        
-                        delta = prev_block(this_block_M==1) - this_block(this_block_M==1);
+                        prev_block_M = zeros(block_height, block_width);
+                        prev_block_M(1:(h2_e-h2_s+1), 1:(w2_e-w2_s+1)) = M(h2_s:h2_e, w2_s:w2_e, comp_frame);
 
-                        if option_delta == 1
+                        
+                        if strcmp(option_fill_in, 'fill')
+                            delta = prev_block - this_block;
+                        elseif strcmp(option_fill_in, 'no_fill')
+                            delta = prev_block(this_block_M==1 & prev_block_M==1) - this_block(this_block_M==1 & prev_block_M==1);
+                        elseif strcmp(option_fill_in, 'fill_est')
+                            delta = prev_block(this_block_M==1) - this_block(this_block_M==1);
+                        else
+                            error('wrong option fill in');
+                        end
+
+
+                        if strcmp(option_delta, 'diff')
                             this_delta = mean(abs(delta(:)));
-                        elseif option_delta == 2
+                        elseif strcmp(option_delta, 'mse')
                             this_delta = mean(delta(:).^2)/meanX2;
-                        elseif option_delta == 3
+                        elseif strcmp(option_delta, 'mae')
                             this_delta = mean(abs(delta(:)))/meanX;
                         else
                             this_delta = -1;
@@ -293,7 +328,7 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
                 %% end find the best fit block in the previous frame
                 %% ------------
 
-                if loss_rate > 0
+                if elem_frac > 0
                     %% prediction
                     %% update the missing elements of this_block in compared_data
                     tmp = this_block;
@@ -317,10 +352,10 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
     space = block_width * block_height * length(find(sel_bit_map == 1)) * ele_size;
 
 
-    meanX2 = mean(data(:).^2);
-    meanX = mean(data(:));
+    meanX2 = mean(data(~M).^2);
+    meanX = mean(data(~M));
     
-    if loss_rate > 0
+    if elem_frac > 0
         %% prediction
         mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
         mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
@@ -336,7 +371,7 @@ function [mse, mae, cc, ratio] = mpeg_based_pred(input_TM_dir, filename, num_fra
 
     ratio = space / (width*height*num_frames*ele_size);
 
-    fprintf('%f, %f, %f, %f', mse, mae, cc, ratio);
+    fprintf('%f, %f, %f, %f\n', mse, mae, cc, ratio);
 
 
     if DEBUG_WRITE == 1
