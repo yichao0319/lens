@@ -200,7 +200,7 @@ function [mse, mae, cc, ratio] = dct_based_pred(input_TM_dir, filename, num_fram
         % compared_data(~M) = mean(reshape(data(M==1), [], 1));
 
         %% by average of nearby elements
-        compared_data = first_guess('avg', data, M);
+        compared_data = first_guess('knn', data, M);
     else
         %% compression
         compared_data = data;
@@ -437,7 +437,7 @@ function [filled_data] = first_guess(method, data, M)
     nx_f = sx(1) * sx(2);
 
 
-    if strcmp(method, 'avg') == 1
+    if strcmpi(method, 'avg')
         
         for drop = [find(M == 0)]
             tmp_sum = 0;
@@ -473,7 +473,35 @@ function [filled_data] = first_guess(method, data, M)
             end
         end
     
+    elseif strcmpi(method, 'knn')
+        filled_data = first_guess('avg', data, M);
+
+        orig_sx = size(filled_data);
+        flat_data = reshape(filled_data, [], orig_sx(3));
+        flat_M    = reshape(M,    [], orig_sx(3));
+
+        maxDist = 3;
+        EPS = 1e-3;
+
+        Z = flat_data;
+        for i = 1:size(flat_data, 1)
+            for j = find(flat_M(i,:) == 0);
+                ind = find((flat_M(i,:)==1) & (abs((1:size(flat_data,2)) - j) <= maxDist));
+                if (~isempty(ind))
+                    Y  = flat_data(:,ind);
+                    C  = Y'*Y;
+                    nc = size(C,1);
+                    C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                    w  = C\(Y'*flat_data(:,j));
+                    w  = reshape(w,1,nc);
+                    Z(i,j) = sum(flat_data(i,ind).*w);
+                end
+            end
+        end
+        filled_data = reshape(Z, orig_sx);
+
     else
-        error('wrong input metho: %d\n', method);
+        error('wrong input method: %s\n', method);
     end
 end
+

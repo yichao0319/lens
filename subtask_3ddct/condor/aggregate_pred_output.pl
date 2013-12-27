@@ -82,8 +82,11 @@ my @files;
 # @files = ("tm.sort_ips.ap.bgp.8.txt.3600.");
 # @files = ("tm.sort_ips.ap.bgp.10.sub_CN.txt.3600.");
 
-@files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
+# @files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
 
+# @files = ("tm_3g_region_all.res0.004.bin60.", "tm_3g_region_all.res0.004.bin60.sub.", "tm_3g_region_all.res0.002.bin60.sub.");
+
+@files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.", "tm_3g_region_all.res0.004.bin60.sub.");
 
 for my $file_name (@files) {
     
@@ -157,13 +160,45 @@ for my $file_name (@files) {
     # }
     # #######################
     if($file_name eq "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.") {
-        $num_frames = 8;
+        $num_frames = 19;
         $width = 217;
         $height = 400;
 
-        @chunk_ws = (22, 40, 55, 110);
-        @chunk_hs = (40, 40, 100, 200);
-        @sel_chunks = (1, 5, 10, 20, 30);
+        @chunk_ws = (22, 40);
+        @chunk_hs = (40, 40);
+    }
+    #######################
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.") {
+        $num_frames = 24;
+        $width = 324;
+        $height = 475;
+
+        @chunk_ws = (33, 66);
+        @chunk_hs = (48, 96);
+    }
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.sub.") {
+        $num_frames = 24;
+        $width = 60;
+        $height = 60;
+
+        @chunk_ws = (6, 10);
+        @chunk_hs = (6, 10);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.") {
+        $num_frames = 24;
+        $width = 647;
+        $height = 949;
+
+        @chunk_ws = (65, 130);
+        @chunk_hs = (95, 190);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.sub.") {
+        $num_frames = 24;
+        $width = 120;
+        $height = 100;
+
+        @chunk_ws = (12, 24);
+        @chunk_hs = (10, 20);
     }
     
 
@@ -172,7 +207,8 @@ for my $file_name (@files) {
     @drop_rates = (0, 0.01, 0.05, 0.1, 0.2, 0.3);
     @group_sizes = (4);
     @opt_types = (0, 1);
-    @quantizations = (5, 10, 20, 30, 50);
+    @sel_chunks = (1, 5, 10, 20, 30);
+    @quantizations = (10, 30, 50, 100);
 
 
     for my $drop_rate (@drop_rates) {
