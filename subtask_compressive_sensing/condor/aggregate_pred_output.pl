@@ -79,7 +79,9 @@ my @files;
 # @files = ("tm.sort_ips.ap.bgp.8.txt.3600.");
 # @files = ("tm.sort_ips.ap.bgp.10.sub_CN.txt.3600.");
 
-@files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
+# @files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
+
+@files = ("tm_3g_region_all.res0.004.bin60.", "tm_3g_region_all.res0.004.bin60.sub.", "tm_3g_region_all.res0.002.bin60.sub.");
 
 
 for my $file_name (@files) {    
@@ -150,6 +152,35 @@ for my $file_name (@files) {
         $height = 400;
 
         @ranks = (1, 2, 3, 5, 10, 20, 30, 50, 100, 150);
+    }
+    #######################
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.") {
+        $num_frames = 24;
+        $width = 324;
+        $height = 475;
+
+        @ranks = (1, 2, 3, 5, 10, 20, 30, 50);
+    }
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.sub.") {
+        $num_frames = 24;
+        $width = 60;
+        $height = 60;
+
+        @ranks = (1, 2, 3, 5, 10);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.") {
+        $num_frames = 24;
+        $width = 647;
+        $height = 949;
+
+        @ranks = (1, 2, 3, 5, 10, 20, 30, 50);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.sub.") {
+        $num_frames = 24;
+        $width = 120;
+        $height = 100;
+
+        @ranks = (1, 2, 3, 5, 10, 20, 30);
     }
     
 

@@ -14,7 +14,11 @@
 %%      'srmf_knn'
 %%      'svd'
 %%      'svd_base'
+%%      'lens'
 %%      'nmf'
+%%   @option_dim: the dimension of the input matrix
+%%      '2d': convert to 2D
+%%      '3d': the original tm is 3D
 %%   @drop_ele_mode:
 %%      'elem': drop elements
 %%      'row': drop rows
@@ -33,11 +37,12 @@
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 5, 'org', 'srmf', 'elem', 'ind', 0.2, 0.5, 1, 1)
-%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.002.bin60.sub.', 24, 120, 100, 4, 5, 'org', 'srmf', 'elem', 'ind', 0.2, 0.5, 1, 1)
+%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 5, 'org', 'srmf', '2d', 'elem', 'ind', 0.2, 0.5, 1, 1)
+%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.002.bin60.sub.', 24, 120, 100, 24, 5, 'org', 'srmf', '2d','elem', 'ind', 0.4, 1, 1, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, seed)
+function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, option_dim, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, seed)
+    addpath('../utils/lens');
     addpath('../utils/mirt_dctn');
     addpath('../utils/compressive_sensing');
     addpath('../utils');
@@ -62,6 +67,14 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     %% Constant
     %% --------------------
     ele_size = 32;  %% size of each elements in bits
+    epsilon = 0.01;
+
+    alpha = 100; lambda = 1000000000;
+    if strcmpi(filename, 'tm_3g_region_all.res0.002.bin60.sub.')
+        alpha = 100; lambda = 1000000000;
+    elseif strcmpi(filename, 'tm_3g_region_all.res0.004.bin60.sub.')
+        alpha = 1e-5; lambda = 1e-6;
+    end
 
 
     %% --------------------
@@ -96,6 +109,15 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     end
     sx = size(data(:,:,1));
     nx = prod(sx);
+
+
+    %% --------------------
+    %% DEBUG
+    %% --------------------
+    if DEBUG2, fprintf('debug array\n'); end
+
+    % data = ones(size(data));
+
 
 
     %% --------------------
@@ -183,11 +205,10 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     end
 
     if DEBUG1, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
-    
+
 
     compared_data = data;
-    % compared_data(~M) = 0;
-
+    compared_data(~M) = 0;
 
     %% --------------------
     %% apply SRMF to each Group of Pictures (GoP)
@@ -201,13 +222,25 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         this_group   = data(:, :, gop_s:gop_e);
         this_group_M = M(:, :, gop_s:gop_e);
 
-        
+
+        %% --------------------
+        %% convert to 2D
+        %% --------------------
+        if strcmpi(option_dim, '2d')
+            orig_sx = size(this_group);
+            % fprintf('size: %d\n',orig_sx);
+            this_group = reshape(this_group, [], orig_sx(3));
+            this_group_M = reshape(this_group_M, [], orig_sx(3));
+            % size(this_group)
+        end
+
+
 
         %% --------------------
         %  Compressive Sensing
         %% --------------------
         this_rank = r; %min(r, rank(this_group));
-        lambda = 0.01;
+        
 
         % meanX2 = mean(this_group(:).^2);
         % meanX = mean(this_group(:));
@@ -224,56 +257,182 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             %% space
             space = space + (prod(size(A)) + prod(size(b))) * ele_size;
 
-        elseif strcmpi(option_type, 'srmf')
+        elseif strcmpi(option_type, 'srtf')
             %% SRMF
-            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, lambda, true);
-            [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, 1000, 100, 50);
+            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
+            % [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, 10, 1e-1, 50);
+            [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
 
             est_group = tensorprod(u4, v4, w4);
             est_group = max(0, est_group);
+
+            %% space
+            space = space + (prod(size(u4)) + prod(size(v4)) + prod(size(w4))) * ele_size;
+
+        elseif strcmpi(option_type, 'srmf')
+            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
+
+            [u4, v4] = SRMF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
+            
+            est_group = u4 * v4';
+            est_group = max(0, est_group);
+
+            %% space
+            space = space + (prod(size(u4)) + prod(size(v4)) ) * ele_size;
+
+        elseif strcmpi(option_type, 'srtf_knn')
+            %% SRMF + KNN
+            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
+            [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
+
+            est_group = tensorprod(u4, v4, w4);
+            est_group = max(0, est_group);
+
+            if strcmpi(option_dim, '3d')
+                orig_f = reshape(this_group, [], sx(n))';
+                est_f = reshape(est_group, [], sx(n))';
+                Z = est_f;
+                f_M   = reshape(this_group_M, [], sx(n))';
+                % size(est_f)
+                
+                maxDist = 3;
+                EPS = 1e-3;
+                
+                for i = 1:group_size
+                    for j = find(f_M(i,:) == 0)
+                        ind = find((f_M(i,:)==1) & (abs((1:(sx(1)*sx(2))) - j) <= maxDist));
+                        if (~isempty(ind))
+                            Y  = est_f(:,ind);
+                            C  = Y'*Y;
+                            nc = size(C,1);
+                            C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                            w  = C\(Y'*est_f(:,j));
+                            w  = reshape(w,1,nc);
+                            Z(i,j) = sum(orig_f(i,ind).*w);
+                        end
+                    end
+                end
+                est_group = reshape(Z', sx(1), sx(2), sx(3));
+            elseif strcmpi(option_dim, '2d')
+                Z = est_group;
+
+                maxDist = 3;
+                EPS = 1e-3;
+                
+                for i = 1:size(Z,1)
+                    for j = find(this_group_M(i,:) == 0);
+                        ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                        if (~isempty(ind))
+                            Y  = est_group(:,ind);
+                            C  = Y'*Y;
+                            nc = size(C,1);
+                            C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                            w  = C\(Y'*est_group(:,j));
+                            w  = reshape(w,1,nc);
+                            Z(i,j) = sum(this_group(i,ind).*w);
+                        end
+                    end
+                end
+                est_group = Z;
+            else
+                error('wrong option_dim');
+            end
+                
 
             %% space
             space = space + (prod(size(u4)) + prod(size(v4)) + prod(size(w4))) * ele_size;
 
         elseif strcmpi(option_type, 'srmf_knn')
             %% SRMF + KNN
-            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, lambda, true);
-            [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, 1000, 100, 50);
-
-            est_group = tensorprod(u4, v4, w4);
+            config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
+            [u4, v4] = SRMF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
+            
+            est_group = u4 * v4';
             est_group = max(0, est_group);
 
-
-            est_f = reshape(est_group, [], sx(n))';
-            Z = est_f;
-            f_M   = reshape(this_group_M, [], sx(n))';
-            % size(est_f)
-            
-            maxDist = 3;
-            EPS = 1e-3;
-            
-            for i = 1:group_size
-                for j = find(f_M(i,:) == 0)
-                    ind = find((f_M(i,:)==1) & (abs((1:(sx(1)*sx(2))) - j) <= maxDist));
-                    if (~isempty(ind))
-                        Y  = est_f(:,ind);
-                        C  = Y'*Y;
-                        nc = size(C,1);
-                        C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
-                        w  = C\(Y'*est_f(:,j));
-                        w  = reshape(w,1,nc);
-                        Z(i,j) = sum(est_f(i,ind).*w);
+            if strcmpi(option_dim, '3d')
+                orig_f = reshape(this_group, [], sx(n))';
+                est_f = reshape(est_group, [], sx(n))';
+                Z = est_f;
+                f_M   = reshape(this_group_M, [], sx(n))';
+                % size(est_f)
+                
+                maxDist = 3;
+                EPS = 1e-3;
+                
+                for i = 1:group_size
+                    for j = find(f_M(i,:) == 0)
+                        ind = find((f_M(i,:)==1) & (abs((1:(sx(1)*sx(2))) - j) <= maxDist));
+                        if (~isempty(ind))
+                            Y  = est_f(:,ind);
+                            C  = Y'*Y;
+                            nc = size(C,1);
+                            C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                            w  = C\(Y'*est_f(:,j));
+                            w  = reshape(w,1,nc);
+                            Z(i,j) = sum(orig_f(i,ind).*w);
+                        end
                     end
                 end
+                est_group = reshape(Z', sx(1), sx(2), sx(3));
+            elseif strcmpi(option_dim, '2d')
+                Z = est_group;
+
+                maxDist = 3;
+                EPS = 1e-3;
+
+
+                for i = 1:size(Z,1)
+                    for j = find(this_group_M(i,:) == 0);
+                        ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                        if (~isempty(ind))
+                            Y  = est_group(:,ind);
+                            C  = Y'*Y;
+                            nc = size(C,1);
+                            C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                            w  = C\(Y'*est_group(:,j));
+                            w  = reshape(w,1,nc);
+                            Z(i,j) = sum(this_group(i,ind).*w);
+                        end
+                    end
+                end
+                
+                est_group = Z;
+            else
+                error('wrong option_dim');
             end
-            est_group = reshape(Z', sx(1), sx(2), sx(3));
+                
 
             %% space
-            space = space + (prod(size(u4)) + prod(size(v4)) + prod(size(w4))) * ele_size;
+            space = space + (prod(size(u4)) + prod(size(v4)) ) * ele_size;
+
+        elseif strcmpi(option_type, 'lens')
+            %% lens
+            A = eye(size(this_group, 1));
+            B = eye(size(this_group, 1));
+            C = eye(size(this_group, 1));
+            E = ~this_group_M;
+            
+            soft = 1;
+            sigma0 = 0.1;
+            F = ones(size(this_group));
+
+            [X,Y,Z,W,sigma] = lens(this_group, this_rank, A,B,C, E,F, sigma0, soft);
+            
+            r = min(this_rank, rank(X));
+            F = (Y~=0);
+
+            soft = 0;
+            [X, Y, Z, W] = lens(this_group, r, A,B,C, E,F, sigma, soft);
+            est_group = A*X + B*(Y.*F) + Z + E.*W;
+
+
+            %% space
+            space = space + prod(size(this_group));
 
         elseif strcmpi(option_type, 'svd')
             %% svd
-            [u,v,w] = FactTensorACLS(this_group, this_rank, this_group_M, false, lambda, 50, 1e-8, 0);
+            [u,v,w] = FactTensorACLS(this_group, this_rank, this_group_M, false, epsilon, 50, 1e-8, 0);
             
             est_group = tensorprod(u,v,w);
             est_group = max(0, est_group);
@@ -284,7 +443,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         elseif strcmpi(option_type, 'svd_base')
             %% svd_base
             BaseX = EstimateBaseline(A, b, sx);
-            [u,v,w] = FactTensorACLS(this_group-BaseX, this_rank, this_group_M, false, lambda, 50, 1e-8, 0);
+            [u,v,w] = FactTensorACLS(this_group-BaseX, this_rank, this_group_M, false, epsilon, 50, 1e-8, 0);
 
             est_group = tensorprod(u,v,w) + BaseX;
             est_group = max(0, est_group);
@@ -292,9 +451,12 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             %% space
             space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
 
+            tmp = this_group - est_group;
+            fprintf('mean=%f\n', mean(tmp(:)) );
+
         elseif strcmpi(option_type, 'nmf')
             %% nmf
-            [u,v,w] = ntf(this_group, this_rank, this_group_M, 'L2', 200, lambda);
+            [u,v,w] = ntf(this_group, this_rank, this_group_M, 'L2', 200, epsilon);
             est_group = tensorprod(u,v,w);
             est_group = max(0, est_group);
 
@@ -304,13 +466,24 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             error('wrong option type');
         end
         
-        compared_data(:, :, gop_s:gop_e) = est_group;
+
+        if strcmpi(option_dim, '3d')
+            compared_data(:, :, gop_s:gop_e) = est_group;
+        elseif strcmpi(option_dim, '2d')
+            compared_data(:, :, gop_s:gop_e) = reshape(est_group, orig_sx);
+        else
+            error('wrong option_dim');
+        end
+
+
+        tmp = abs(compared_data - data);
+        fprintf('mean=%f\n', mean(tmp(:)) );
     end
 
 
     meanX2 = mean(data(~M).^2);
     meanX = mean(data(~M));
-    
+
     if elem_frac > 0
         %% prediction
         mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
@@ -326,7 +499,16 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     end
     ratio = space / (width*height*num_frames*ele_size);
 
-    fprintf('%f, %f, %f, %f\n', mse, mae, cc, ratio);
+    fprintf('results=%f, %f, %f, %f\n', mse, mae, cc, ratio);
+
+
+    missing = data(~M);
+    pred    = compared_data(~M);
+    % size(missing)
+    % nnz(missing)
+    ix = find(missing > 0);
+    missing(ix(1:min(10,length(ix))))'
+    pred(ix(1:min(10,length(ix))))'
 
 
     if DEBUG_WRITE == 1
