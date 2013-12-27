@@ -5,14 +5,14 @@
 Universe = vanilla
 
 executable = /bin/bash
-arguments = tmp.mpeg_based_pred.XXX.sh
-# Requirements = (ARCH == "X86_64") && (Memory >= 64)
-Requirements = (ARCH == "INTEL") && (Memory >= 64)
+arguments = tmp.XXX.sh
+Requirements = (ARCH == "X86_64") && (Memory >= 64)
+# Requirements = (ARCH == "INTEL") && (Memory >= 64)
 Rank = Memory >= 128
 
 
-Error = /u/yichao/anomaly_compression/condor_data/subtask_mpeg/condor/log/mpeg_based_pred.XXX.err
-Output = /u/yichao/anomaly_compression/condor_data/subtask_mpeg/condor/log/mpeg_based_pred.XXX.txt
-Log = /u/yichao/anomaly_compression/condor_data/subtask_mpeg/condor/log/mpeg_based_pred.XXX.log
+Error = /u/yichao/anomaly_compression/condor_data/subtask_mpeg/condor/log/XXX.err
+Output = /u/yichao/anomaly_compression/condor_data/subtask_mpeg/condor/log/XXX.txt
+Log = /u/yichao/anomaly_compression/condor_data/subtask_mpeg/condor/log/XXX.log
 
 Queue 1
