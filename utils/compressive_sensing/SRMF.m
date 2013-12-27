@@ -132,15 +132,18 @@ function obj = objfcn(X,M,U,V,F,G,alpha,lambda)
   E  = (U*V'-X).*M;
   en = sum(E(:).^2);
   obj = en;
+  % fprintf('main: %f\n', obj)
   if (alpha)
     FUV = (F*U)*V';
     UGV = U*(G*V)';
     obj = obj + alpha*(sum(FUV(:).^2) + sum(UGV(:).^2));
+    % fprintf('alpha: %f (*%f=%f)\n', (sum(FUV(:).^2) + sum(UGV(:).^2)), alpha, alpha*(sum(FUV(:).^2) + sum(UGV(:).^2)));
   end
   if (lambda)
     un = sum(U(:).^2);
     vn = sum(V(:).^2);
     obj = obj + lambda*(un + vn);
+    % fprintf('lambda: %f (*%f=%f)\n', (un + vn), lambda, lambda*(un + vn));
   end
   
 % min |(U*V' - X).*M|_2^2 + alpha*|FU*V'|_2^2 + lambda*|V|_2^2

@@ -16,50 +16,50 @@ function M = DropValues(nr,nc,nt,ElemFrac,LossRate,ElemMode,LossMode,BurstSize)
   numElem = nr*nc;
   Ind = reshape(1:numElem,nr,nc);
   switch(lower(ElemMode))
-   case {'elem'}
+  case {'elem'}
     idx = randperm(numElem);
     elem_list = idx(1:ceil(numElem*ElemFrac));
-   case {'row'}
+  case {'row'}
     idx = randperm(nr);
     row_list = idx(1:ceil(nr*ElemFrac));
     elem_list = reshape(Ind(row_list,:),1,[]);
-   case {'col'}
+  case {'col'}
     idx = randperm(nc);
     col_list = idx(1:ceil(nc*ElemFrac));
     elem_list = reshape(Ind(:,col_list),1,[]);
-   case {'time'}
+  case {'time'}
     elem_list = 1:numElem;
   end
 
   % then drop the selected elements
   M = ones(numElem,nt);
   switch(lower(LossMode))
-   case {'ind'}
+  case {'ind'}
     % rand loss independent across elem_list
     switch(lower(ElemMode))
-     case {'elem','time'}
+    case {'elem','time'}
       for e = elem_list
         idx = randperm(nt);
         M(e,idx(1:ceil(nt*LossRate))) = 0;
       end
-     case {'row'}
+    case {'row'}
       for r = row_list
         idx = randperm(nt);
         M(Ind(r,:),idx(1:ceil(nt*LossRate))) = 0;
       end
-     case {'col'}
+    case {'col'}
       for c = col_list
         idx = randperm(nt);
         M(Ind(:,c),idx(1:ceil(nt*LossRate))) = 0;
       end
     end
     
-   case {'syn'}
+  case {'syn'}
     % rand loss synchronized among elem_list
     idx = randperm(nt);
     M(elem_list,idx(1:ceil(nt*LossRate))) = 0;
     
-   case {'half'}
+  case {'half'}
     % deterministic loss in which entire second half is lost
     M(elem_list,max(1,ceil(nt*(1-LossRate))):end) = 0;
     
@@ -84,5 +84,5 @@ function M = DropValues(nr,nc,nt,ElemFrac,LossRate,ElemMode,LossMode,BurstSize)
   % reshape
   M = reshape(M,nr,nc,nt);
   
-  size(M)
-  nnz(M)/prod(size(M))
+  % size(M)
+  % nnz(M)/prod(size(M))
