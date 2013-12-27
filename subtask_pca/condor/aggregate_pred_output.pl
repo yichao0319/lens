@@ -69,7 +69,7 @@ my @opt_swap_mats;
 my @block_ws;
 my @block_hs;
 my @seeds;
-my @drop_rates;
+my @opt_dims;
 my @ranks;
 my @files;
 
@@ -79,8 +79,11 @@ my @files;
 # @files = ("tm.sort_ips.ap.bgp.8.txt.3600.");
 # @files = ("tm.sort_ips.ap.bgp.10.sub_CN.txt.3600.");
 
-@files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
+# @files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
 
+# @files = ("tm_3g_region_all.res0.004.bin60.", "tm_3g_region_all.res0.004.bin60.sub.", "tm_3g_region_all.res0.002.bin60.sub.");
+
+@files=("tm_3g_region_all.res0.002.bin60.sub.", "tm_3g_region_all.res0.004.bin60.sub.", "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
 
 for my $file_name (@files) {
     
@@ -154,18 +157,56 @@ for my $file_name (@files) {
     # }
     # #######################
     if($file_name eq "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.") {
-        $num_frames = 8;
+        $num_frames = 19;
         $width = 217;
         $height = 400;
 
-        @block_ws = (22, 55, 110, 217);
-        @block_hs = (40, 100, 200, 400);
-        @ranks = (1, 2, 3, 5, 10, 20, 30);
+        @block_ws = (217);
+        @block_hs = (400);
+        @ranks = (1, 3, 10, 20);
+    }
+    #######################
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.") {
+        $num_frames = 24;
+        $width = 324;
+        $height = 475;
+
+        @block_ws = (324);
+        @block_hs = (475);
+        @ranks = (1, 2, 3, 5, 10, 20, 30, 100);
+    }
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.sub.") {
+        $num_frames = 24;
+        $width = 60;
+        $height = 60;
+
+        @block_ws = (60);
+        @block_hs = (60);
+        @ranks = (1, 3, 5, 10, 20, 24);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.") {
+        $num_frames = 24;
+        $width = 647;
+        $height = 949;
+
+        @block_ws = (647);
+        @block_hs = (949);
+        @ranks = (1, 2, 3, 5, 10, 20, 30, 100);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.sub.") {
+        $num_frames = 24;
+        $width = 120;
+        $height = 100;
+
+        @block_ws = (120);
+        @block_hs = (100);
+        @ranks = (1, 3, 5, 10, 20, 24);
     }
 
-    @seeds = (1 .. 10);
-    @opt_swap_mats = (0, 1, 3);
-    @drop_rates = (0, 0.01, 0.05, 0.1, 0.2, 0.3);
+
+    @seeds = (1 .. 5);
+    @opt_swap_mats = ("org", "rand", "cc");
+    @opt_dims=("2d");
     
 
     for my $drop_rate (@drop_rates) {

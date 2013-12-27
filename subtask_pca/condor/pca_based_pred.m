@@ -4,21 +4,37 @@
 %%
 %% - Input:
 %%   @option_swap_mat: determine how to arrange rows and columns of TM
-%%      0: original matrix
-%%      1: randomize raw and col
-%%      2: geo
-%%      3: correlated coefficient
-%%   @loss_rate: 
-%%      (0-1): drop elements for prediction
+%%      'org': original matrix
+%%      'rand': randomize raw and col
+%%      'geo': geo -- can only be used by 4sq TM matrix
+%%      'cc': correlation coefficient
+%%   @option_dim: the dimension of the input matrix
+%%      '2d': convert to 2D
+%%      '3d': the original tm is 3D
+%%   @drop_ele_mode:
+%%      'elem': drop elements
+%%      'row': drop rows
+%%      'col': drop columns
+%%   @drop_mode:
+%%      'ind': drop independently
+%%      'syn': rand loss synchronized among elem_list
+%%   @elem_frac: 
+%%      (0-1): the fraction of elements in a frame 
 %%      0    : compression
+%%   @loss_rate: 
+%%      (0-1): the fraction of frames to drop
+%%   @burst_size: 
+%%      burst in time (i.e. frame)
 %%
 %% - Output:
 %%
 %% e.g. 
-%%     [mse, mae, cc, ratio] = pca_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 217, 400, 50, 0, 0.05, 1)
+%%     [mse, mae, cc, ratio] = pca_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 217, 400, 50, 'org', '2d', 'elem', 'ind', 0.2, 0.5, 1, 1)
+%%     [mse, mae, cc, ratio] = pca_based_pred('../processed_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.002.bin60.sub.', 24, 120, 100, 120, 100, 20, 'org', '2d', 'elem', 'ind', 0.2, 0.5, 1, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, r, option_swap_mat, loss_rate, seed)
+function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_frames, width, height, block_width, block_height, r, option_swap_mat, option_dim, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, seed)
+    addpath('/u/yichao/anomaly_compression/utils/compressive_sensing');
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils');
 
@@ -30,6 +46,7 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
     DEBUG1 = 0;
     DEBUG2 = 0;
     DEBUG3 = 0; %% block index check
+    DEBUG4 = 1; %% 
     DEBUG_WRITE = 0;
 
     % if width ~= height
@@ -83,20 +100,27 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
     %% --------------------
     if DEBUG2, fprintf('drop elements\n'); end
 
-    M = ones(size(data));
-    if loss_rate > 0
-        %% prediction
-        num_missing = ceil(nx * loss_rate);
-        for f = [1:num_frames]
-            if DEBUG0, fprintf('  frame %d\n', f); end
+    % M = ones(size(data));
+    % if loss_rate > 0
+    %     %% prediction
+    %     num_missing = ceil(nx * loss_rate);
+    %     for f = [1:num_frames]
+    %         if DEBUG0, fprintf('  frame %d\n', f); end
 
-            ind = randperm(nx);
-            tmp = M(:,:,f);
-            tmp(ind(1:num_missing)) = 0;
-            M(:,:,f) = tmp;
-        end
+    %         ind = randperm(nx);
+    %         tmp = M(:,:,f);
+    %         tmp(ind(1:num_missing)) = 0;
+    %         M(:,:,f) = tmp;
+    %     end
+    % else
+    %     %% compression
+    % end
+    if elem_frac > 0
+        %% prediction
+        M = DropValues(sx(1), sx(2), num_frames, elem_frac, loss_rate, drop_ele_mode, drop_mode, burst_size);
     else
         %% compression
+        M = ones(size(data));
     end
 
 
@@ -109,15 +133,15 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
     %% --------------------
     if DEBUG2, fprintf('swap matrix row and column\n'); end
 
-    if option_swap_mat == 0
+    if strcmp(option_swap_mat, 'org')
         %% 0: original matrix
         mapping_rows = [1:height];
         mapping_cols = [1:width];
-    elseif option_swap_mat == 1
+    elseif strcmp(option_swap_mat, 'rand')
         %% 1: randomize raw and col
         mapping_rows = randperm(height);
         mapping_cols = randperm(width);
-    elseif option_swap_mat == 2
+    elseif strcmp(option_swap_mat, 'geo')
         %% 2: geo -- only for 4sq TM
         % [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
         % if DEBUG0
@@ -127,7 +151,7 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
         
         % mapping = sort_by_lat_lng(location, width, height);
 
-    elseif option_swap_mat == 3
+    elseif strcmp(option_swap_mat, 'cc')
         %% 3: correlated coefficient
         
         tmp_rows = reshape(data, height, []);
@@ -143,7 +167,7 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
         mapping_rows = sort_by_coef(coef_rows);
         mapping_cols = sort_by_coef(coef_cols);
 
-    elseif option_swap_mat == 4
+    elseif strcmp(option_swap_mat, 'pop')
         %% 4: popularity
         error('swap according to popularity: not done yet\n');
         
@@ -161,7 +185,7 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
     %% --------------------    
     %% first guess of missing elements
     %% --------------------
-    if loss_rate > 0
+    if elem_frac > 0
         %% prediction
         
         %% by 0s
@@ -173,50 +197,102 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
         % compared_data(~M) = mean(reshape(data(M==1), [], 1));
 
         %% by average of nearby elements
-        compared_data = first_guess('avg', data, M);
+        % compared_data = first_guess('avg', data, M);
+
+        %% by KNN
+        compared_data = first_guess('knn', data, M);
     else
         %% compression
         compared_data = data;
     end
 
 
-    %% --------------------
-    %% pca for each block
-    %% --------------------
-    if DEBUG2, fprintf('pca for each block\n'); end
-
-    for frame = [1:num_frames]
-        if DEBUG0, fprintf('  frame %d\n', frame); end
-
-        for w = [1:num_blocks(2)]
-            w_s = (w-1)*block_width + 1;
-            w_e = min(w*block_width, width);
-            for h = [1:num_blocks(1)]
-                h_s = (h-1)*block_height + 1;
-                h_e = min(h*block_height, height);
-                if DEBUG3, fprintf('  block: [%d,%d]\n', h, w); end
-                
-                this_block   = compared_data(h_s:h_e, w_s:w_e, frame);
-                this_block_M = M(h_s:h_e, w_s:w_e, frame);
-                
-                
-                %% ------------
-                %% PCA of this block
-                this_rank = min(r, rank(this_block));
-                [latent, U, eigenvector] = calculate_PCA(this_block);
-                compared_data(h_s:h_e, w_s:w_e, frame) = PCA_compress(latent, U, eigenvector, this_rank);
-
-                %% space
-                space = space + (length(latent) + size(U,1)*this_rank + size(eigenvector,1)*this_rank) * ele_size;
-            end
-        end
+    if DEBUG4
+        tmp = abs(data - compared_data);
+        fprintf('before, diff=%f\n', mean(tmp(:)));
     end
 
 
-    meanX2 = mean(data(:).^2);
-    meanX = mean(data(:));
+    %% --------------------
+    %% do PCA in 3D
+    %% --------------------
+    if strcmpi(option_dim, '3d')
+        %% --------------------
+        %% pca for each block
+        %% --------------------
+        if DEBUG2, fprintf('pca for each block\n'); end
 
-    if loss_rate > 0
+        for frame = [1:num_frames]
+            if DEBUG0, fprintf('  frame %d\n', frame); end
+
+            for w = [1:num_blocks(2)]
+                w_s = (w-1)*block_width + 1;
+                w_e = min(w*block_width, width);
+                for h = [1:num_blocks(1)]
+                    h_s = (h-1)*block_height + 1;
+                    h_e = min(h*block_height, height);
+                    if DEBUG3, fprintf('  block: [%d,%d]\n', h, w); end
+                    
+                    this_block   = compared_data(h_s:h_e, w_s:w_e, frame);
+                    this_block_M = M(h_s:h_e, w_s:w_e, frame);
+                    
+                    
+                    %% ------------
+                    %% PCA of this block
+                    this_rank = min(r, rank(this_block));
+                    [latent, U, eigenvector] = calculate_PCA(this_block);
+                    compared_data(h_s:h_e, w_s:w_e, frame) = PCA_compress(latent, U, eigenvector, this_rank);
+
+                    if DEBUG4
+                        tmp = abs(compared_data(h_s:h_e, w_s:w_e, frame) - this_block);
+                        fprintf('f%d, diff=%f\n', frame, mean(tmp(:)));
+                    end
+
+                    %% space
+                    space = space + (length(latent) + size(U,1)*this_rank + size(eigenvector,1)*this_rank) * ele_size;
+                end
+            end
+        end
+
+    %% --------------------
+    %% do PCA in 2D
+    %% --------------------
+    elseif strcmpi(option_dim, '2d')
+        orig_sx = size(compared_data);
+        this_block = reshape(compared_data, [], num_frames)';
+        if DEBUG4, fprintf('size=%d\n', size(this_block)); end
+
+        %% ------------
+        %% PCA of this block
+        this_rank = min(r, rank(this_block));
+        [latent, U, eigenvector] = calculate_PCA(this_block);
+        pca_tm = PCA_compress(latent, U, eigenvector, this_rank);
+
+        if DEBUG4
+            tmp = abs(pca_tm - this_block);
+            fprintf('pca, diff=%f\n', mean(tmp(:)));
+        end
+
+        compared_data = reshape(pca_tm', orig_sx);
+
+        %% space
+        space = space + (length(latent) + size(U,1)*this_rank + size(eigenvector,1)*this_rank) * ele_size;
+
+    else
+        error('wrong dimension')
+    end
+
+
+    if DEBUG4
+        tmp = abs(data - compared_data);
+        fprintf('all, diff=%f\n', mean(tmp(:)));
+    end
+
+
+    meanX2 = mean(data(~M).^2);
+    meanX = mean(data(~M));
+
+    if elem_frac > 0
         %% prediction
         mse = mean(( data(~M) - max(0,compared_data(~M)) ).^2) / meanX2;
         mae = mean(abs((data(~M) - max(0,compared_data(~M))))) / meanX;
@@ -231,7 +307,7 @@ function [mse, mae, cc, ratio] = pca_based_pred(input_TM_dir, filename, num_fram
     end
     ratio = space / (width*height*num_frames*ele_size);
 
-    fprintf('%f, %f, %f, %f', mse, mae, cc, ratio);
+    fprintf('%f, %f, %f, %f\n', mse, mae, cc, ratio);
 
 
     if DEBUG_WRITE == 1
@@ -357,7 +433,7 @@ function [filled_data] = first_guess(method, data, M)
     nx_f = sx(1) * sx(2);
 
 
-    if strcmp(method, 'avg') == 1
+    if strcmpi(method, 'avg')
         
         for drop = [find(M == 0)]
             tmp_sum = 0;
@@ -393,7 +469,34 @@ function [filled_data] = first_guess(method, data, M)
             end
         end
     
+    elseif strcmpi(method, 'knn')
+        filled_data = first_guess('avg', data, M);
+
+        orig_sx = size(filled_data);
+        flat_data = reshape(filled_data, [], orig_sx(3));
+        flat_M    = reshape(M,    [], orig_sx(3));
+
+        maxDist = 3;
+        EPS = 1e-3;
+
+        Z = flat_data;
+        for i = 1:size(flat_data, 1)
+            for j = find(flat_M(i,:) == 0);
+                ind = find((flat_M(i,:)==1) & (abs((1:size(flat_data,2)) - j) <= maxDist));
+                if (~isempty(ind))
+                    Y  = flat_data(:,ind);
+                    C  = Y'*Y;
+                    nc = size(C,1);
+                    C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                    w  = C\(Y'*flat_data(:,j));
+                    w  = reshape(w,1,nc);
+                    Z(i,j) = sum(flat_data(i,ind).*w);
+                end
+            end
+        end
+        filled_data = reshape(Z, orig_sx);
+
     else
-        error('wrong input metho: %d\n', method);
+        error('wrong input method: %s\n', method);
     end
 end

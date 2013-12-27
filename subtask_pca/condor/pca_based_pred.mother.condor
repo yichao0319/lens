@@ -5,9 +5,9 @@
 Universe = vanilla
 
 executable = /bin/bash
-arguments = tmp.pca_based_pred.XXX.sh
-# Requirements = (ARCH == "X86_64") && (Memory >= 64)
-Requirements = (ARCH == "INTEL") && (Memory >= 64)
+arguments = tmp.XXX.sh
+Requirements = (ARCH == "X86_64") && (Memory >= 64)
+# Requirements = (ARCH == "INTEL") && (Memory >= 64)
 Rank = Memory >= 128
 
 
