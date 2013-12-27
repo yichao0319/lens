@@ -83,7 +83,11 @@ my @files;
 # @files = ("tm.sort_ips.ap.bgp.8.txt.3600.");
 # @files = ("tm.sort_ips.ap.bgp.10.sub_CN.txt.3600.");
 
-@files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
+# @files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.");
+
+# @files = ("tm_3g_region_all.res0.004.bin60.", "tm_3g_region_all.res0.004.bin60.sub.", "tm_3g_region_all.res0.002.bin60.sub.");
+
+@files = ("tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.", "tm_3g_region_all.res0.004.bin60.sub.");
 
 
 for my $file_name (@files) {
@@ -162,13 +166,50 @@ for my $file_name (@files) {
     # }
     # #######################
     if($file_name eq "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.") {
-        $num_frames = 8;
+        $num_frames = 19;
         $width = 217;
         $height = 400;
 
         @block_ws = (22, 40, 55, 110);
         @block_hs = (40, 40, 100, 200);
-        @num_sel_blocks2 = (4, 16, 32, 64, 128)
+        @num_sel_blocks2 = (4, 16, 32, 64, 128);
+    }
+    #######################
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.") {
+        $num_frames = 24;
+        $width = 324;
+        $height = 475;
+
+        @block_ws = (33, 66);
+        @block_hs = (48, 96);
+        @num_sel_blocks2 = (4, 16, 32, 64, 128);
+    }
+    if($file_name eq "tm_3g_region_all.res0.004.bin60.sub.") {
+        $num_frames = 24;
+        $width = 60;
+        $height = 60;
+
+        @block_ws = (6, 10);
+        @block_hs = (6, 10);
+        @num_sel_blocks2 = (4, 16, 32, 64, 128);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.") {
+        $num_frames = 24;
+        $width = 647;
+        $height = 949;
+
+        @block_ws = (65, 130);
+        @block_hs = (95, 190);
+        @num_sel_blocks2 = (4, 16, 32, 64, 128);
+    }
+    if($file_name eq "tm_3g_region_all.res0.002.bin60.sub.") {
+        $num_frames = 24;
+        $width = 120;
+        $height = 100;
+
+        @block_ws = (12, 24);
+        @block_hs = (10, 20);
+        @num_sel_blocks2 = (4, 16, 32, 64, 128);
     }
 
 
