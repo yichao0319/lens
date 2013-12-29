@@ -21,11 +21,21 @@
 
 #######################
 
-perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/cells_3g_region_all.res0.004.bin60 500 10
-perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.004.bin60 500 1000000
-perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.004.bin60.sub 500 100000000
+# perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/cells_3g_region_all.res0.004.bin60 500 10
+# perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.004.bin60 500 1000000
+# perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.004.bin60.sub 500 100000000
 
-perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/cells_3g_region_all.res0.002.bin60 2000 10
-perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.002.bin60 2000 100000
-perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.002.bin60.sub 2000 100000000
+# perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/cells_3g_region_all.res0.002.bin60 2000 10
+# perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.002.bin60 2000 100000
+# perl plot_TM.pl ../processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.002.bin60.sub 2000 100000000
+
+#######################
+
+# perl plot_TM.pl ../processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top100.txt.86400 500 1000
+# perl plot_TM.pl ../processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top150.txt.86400 500 1000
+# perl plot_TM.pl ../processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top200.txt.86400 500 1000
+
+#######################
+
+perl plot_TM.pl ../processed_data/subtask_parse_totem/tm/tm_totem 500 500000
 

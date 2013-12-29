@@ -74,9 +74,13 @@ if($DEBUG2) {
 #############
 print "get all TM files\n" if($DEBUG2);
 
+my $num_frames = 0;
 opendir (DIR, $tm_dir) or die $!;
 while (my $file = readdir(DIR)) {
     next unless($file =~ /^$tm_file/);
+    last if($num_frames > 10);
+    $num_frames ++;
+    
     print "$tm_dir/$file\n" if($DEBUG1);
 
     #####
