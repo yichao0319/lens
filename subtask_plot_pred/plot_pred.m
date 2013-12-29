@@ -68,9 +68,9 @@ function plot_pred()
         fprintf('PCA, rank\n');
 
         scheme = 'pca_based_pred';
-        
-        
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+
+        % 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -119,6 +119,23 @@ function plot_pred()
                 block_w    = 217;
                 block_h    = 400;
                 ranks      = [1, 3, 10, 20];
+
+                opt_swap_mat = 'org';
+                opt_dim      = '2d';
+
+                drop_ele_mode = 'elem';
+                drop_mode     = 'ind';
+                elem_frac     = 0.3;
+                loss_rate     = 0.1;
+                burst_size    = 1;
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                block_w    = 23;
+                block_h    = 23;
+                ranks      = [1 3 5 10 30 50 100];
 
                 opt_swap_mat = 'org';
                 opt_dim      = '2d';
@@ -182,8 +199,8 @@ function plot_pred()
             set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
             set(lh1, 'LineWidth', 4);
             set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh1, 'MarkerEdgeColor', 'none');
-            set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+            set(lh1, 'MarkerEdgeColor', 'auto');
+            set(lh1, 'MarkerFaceColor', 'auto');
             set(lh1, 'MarkerSize', 10);
             hold on;
 
@@ -192,8 +209,8 @@ function plot_pred()
             set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
             set(lh2, 'LineWidth', 4);
             set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh2, 'MarkerEdgeColor', 'none');
-            set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+            set(lh2, 'MarkerEdgeColor', 'auto');
+            set(lh2, 'MarkerFaceColor', 'auto');
             set(lh2, 'MarkerSize', 12);
             hold on;
 
@@ -203,7 +220,7 @@ function plot_pred()
             set(lh3, 'LineWidth', 4);
             set(lh3, 'marker', 's');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
             set(lh3, 'MarkerEdgeColor', 'auto');
-            set(lh3, 'MarkerFaceColor', 'none');
+            set(lh3, 'MarkerFaceColor', 'auto');
             set(lh3, 'MarkerSize', 12);        
             
             kh = legend([lh1, lh2, lh3, bh1], 'MSE', 'MAE', 'CC', 'space');
@@ -238,7 +255,7 @@ function plot_pred()
         scheme = 'dct_based_pred';
         
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -253,6 +270,7 @@ function plot_pred()
                 opt_swap_mat = 'org';
                 chunk_w    = 12;
                 chunk_h    = 10;
+                quantizations = [0.1 50 100];
 
                 drop_ele_mode = 'elem';
                 drop_mode     = 'ind';
@@ -267,6 +285,7 @@ function plot_pred()
                 opt_swap_mat = 'org';
                 chunk_w    = 6;
                 chunk_h    = 6;
+                quantizations = [0.1 50 100];
 
                 drop_ele_mode = 'elem';
                 drop_mode     = 'ind';
@@ -281,6 +300,22 @@ function plot_pred()
                 opt_swap_mat = 'org';
                 chunk_w    = 22;
                 chunk_h    = 40;
+                quantizations = [0.1 50 100];
+
+                drop_ele_mode = 'elem';
+                drop_mode     = 'ind';
+                elem_frac     = 0.3;
+                loss_rate     = 0.1;
+                burst_size    = 1;
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+                quantizations = [1 50 100];
+
+                opt_swap_mat = 'org';
+                chunk_w    = 4;
+                chunk_h    = 4;
 
                 drop_ele_mode = 'elem';
                 drop_mode     = 'ind';
@@ -301,7 +336,6 @@ function plot_pred()
 
             %% single, quantizations=(0.1 50 100)
             opt_type = 'single';
-            quantizations = [0.1 50 100];
             for quan = quantizations
                 
                 for seed = seeds
@@ -383,8 +417,8 @@ function plot_pred()
             set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
             set(lh1, 'LineWidth', 4);
             set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh1, 'MarkerEdgeColor', 'none');
-            set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+            set(lh1, 'MarkerEdgeColor', 'auto');
+            set(lh1, 'MarkerFaceColor', 'auto');
             set(lh1, 'MarkerSize', 10);
             hold on;
 
@@ -393,8 +427,8 @@ function plot_pred()
             set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
             set(lh2, 'LineWidth', 4);
             set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh2, 'MarkerEdgeColor', 'none');
-            set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+            set(lh2, 'MarkerEdgeColor', 'auto');
+            set(lh2, 'MarkerFaceColor', 'auto');
             set(lh2, 'MarkerSize', 12);
             hold on;
 
@@ -404,7 +438,7 @@ function plot_pred()
             set(lh3, 'LineWidth', 4);
             set(lh3, 'marker', 's');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
             set(lh3, 'MarkerEdgeColor', 'auto');
-            set(lh3, 'MarkerFaceColor', 'none');
+            set(lh3, 'MarkerFaceColor', 'auto');
             set(lh3, 'MarkerSize', 12);        
             
             set(gca, 'FontSize', font_size);
@@ -422,7 +456,7 @@ function plot_pred()
             set(gca, 'XLim', [0 Inf]);
             % set(gca, 'YLim', [0 1]);
 
-            set(gca, 'XTickLabel', {'quan=0.1', 'quan=50', 'quan=100', '#chunks=1', '#chunks=50', '#chunks=200'});
+            set(gca, 'XTickLabel', {'quan=1', 'quan=50', 'quan=100', '#chunks=1', '#chunks=50', '#chunks=200'});
             XTickLabel = get(gca,'XTickLabel');
             set(gca,'XTickLabel',' ');
             XTick = get(gca,'XTick');
@@ -449,7 +483,7 @@ function plot_pred()
         scheme = 'dct_based_pred';
         
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -464,6 +498,7 @@ function plot_pred()
                 opt_swap_mat = 'org';
                 chunk_w    = 12;
                 chunk_h    = 10;
+                quantizations = [0.1 50 100];
 
                 drop_ele_mode = 'elem';
                 drop_mode     = 'ind';
@@ -478,6 +513,7 @@ function plot_pred()
                 opt_swap_mat = 'org';
                 chunk_w    = 6;
                 chunk_h    = 6;
+                quantizations = [0.1 50 100];
 
                 drop_ele_mode = 'elem';
                 drop_mode     = 'ind';
@@ -492,6 +528,22 @@ function plot_pred()
                 opt_swap_mat = 'org';
                 chunk_w    = 22;
                 chunk_h    = 40;
+                quantizations = [0.1 50 100];
+
+                drop_ele_mode = 'elem';
+                drop_mode     = 'ind';
+                elem_frac     = 0.3;
+                loss_rate     = 0.1;
+                burst_size    = 1;
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                opt_swap_mat = 'org';
+                chunk_w    = 4;
+                chunk_h    = 4;
+                quantizations = [1 50 100];
 
                 drop_ele_mode = 'elem';
                 drop_mode     = 'ind';
@@ -512,7 +564,6 @@ function plot_pred()
 
             %% single, quantizations=(0.1 50 100)
             opt_type = 'single';
-            quantizations = [0.1 50 100];
             for quan = quantizations
                 
                 for seed = seeds
@@ -594,8 +645,8 @@ function plot_pred()
             set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
             set(lh1, 'LineWidth', 4);
             set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh1, 'MarkerEdgeColor', 'none');
-            set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+            set(lh1, 'MarkerEdgeColor', 'auto');
+            set(lh1, 'MarkerFaceColor', 'auto');
             set(lh1, 'MarkerSize', 10);
             hold on;
 
@@ -604,8 +655,8 @@ function plot_pred()
             set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
             set(lh2, 'LineWidth', 4);
             set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh2, 'MarkerEdgeColor', 'none');
-            set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+            set(lh2, 'MarkerEdgeColor', 'auto');
+            set(lh2, 'MarkerFaceColor', 'auto');
             set(lh2, 'MarkerSize', 12);
             hold on;
 
@@ -615,7 +666,7 @@ function plot_pred()
             set(lh3, 'LineWidth', 4);
             set(lh3, 'marker', 's');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
             set(lh3, 'MarkerEdgeColor', 'auto');
-            set(lh3, 'MarkerFaceColor', 'none');
+            set(lh3, 'MarkerFaceColor', 'auto');
             set(lh3, 'MarkerSize', 12);        
             
             set(gca, 'FontSize', font_size);
@@ -633,7 +684,7 @@ function plot_pred()
             set(gca, 'XLim', [0 Inf]);
             % set(gca, 'YLim', [0 1]);
 
-            set(gca, 'XTickLabel', {'quan=0.1', 'quan=50', 'quan=100', '#chunks=1', '#chunks=50', '#chunks=200'});
+            set(gca, 'XTickLabel', {'quan=1', 'quan=50', 'quan=100', '#chunks=1', '#chunks=50', '#chunks=200'});
             XTickLabel = get(gca,'XTickLabel');
             set(gca,'XTickLabel',' ');
             XTick = get(gca,'XTick');
@@ -660,8 +711,8 @@ function plot_pred()
         scheme = 'srmf_based_pred';
         
         
-        opt_types = {'srmf', 'srmf_knn', 'svd'};
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        opt_types = {'srmf', 'srmf_knn', 'svd', 'lens'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -687,6 +738,13 @@ function plot_pred()
                 height     = 400;
 
                 ranks      = [1 5 10 50 100];
+
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                ranks      = [1 5 10 30 50 100];
 
             end
 
@@ -755,8 +813,8 @@ function plot_pred()
                 set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
                 set(lh1, 'LineWidth', 4);
                 set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh1, 'MarkerEdgeColor', 'none');
-                set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+                set(lh1, 'MarkerEdgeColor', 'auto');
+                set(lh1, 'MarkerFaceColor', 'auto');
                 set(lh1, 'MarkerSize', 10);
                 hold on;
 
@@ -765,8 +823,8 @@ function plot_pred()
                 set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
                 set(lh2, 'LineWidth', 4);
                 set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh2, 'MarkerEdgeColor', 'none');
-                set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+                set(lh2, 'MarkerEdgeColor', 'auto');
+                set(lh2, 'MarkerFaceColor', 'auto');
                 set(lh2, 'MarkerSize', 12);
                 hold on;
 
@@ -776,7 +834,7 @@ function plot_pred()
                 set(lh3, 'LineWidth', 4);
                 set(lh3, 'marker', 's');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
                 set(lh3, 'MarkerEdgeColor', 'auto');
-                set(lh3, 'MarkerFaceColor', 'none');
+                set(lh3, 'MarkerFaceColor', 'auto');
                 set(lh3, 'MarkerSize', 12);        
                 
                 kh = legend([lh1, lh2, lh3, bh1], 'MSE', 'MAE', 'CC', 'space');
@@ -812,7 +870,7 @@ function plot_pred()
         scheme = 'mpeg_lc_based_pred';
         
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -842,6 +900,14 @@ function plot_pred()
 
                 block_w    = 22;
                 block_h    = 40;
+                
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                block_w    = 4;
+                block_h    = 4;
                 
             end
 
@@ -1196,7 +1262,7 @@ function plot_pred()
         scheme = 'mpeg_lc_based_pred';
         
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -1226,6 +1292,14 @@ function plot_pred()
 
                 block_w    = 22;
                 block_h    = 40;
+                
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                block_w    = 4;
+                block_h    = 4;
                 
             end
 
@@ -1578,7 +1652,7 @@ function plot_pred()
         fprintf('\nPureRandLoss\n');
 
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -1623,6 +1697,19 @@ function plot_pred()
                 chunk_w    = 22;
                 chunk_h    = 40;
 
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                %% pca
+                block_w    = 23;
+                block_h    = 23;
+
+                %% dct
+                chunk_w    = 4;
+                chunk_h    = 4;
+
             end
             
 
@@ -1635,7 +1722,7 @@ function plot_pred()
 
 
             %% pca1
-            r = 1;
+            r = 10;
             opt_swap_mat = 'org';
             opt_dim = '2d';
             
@@ -2233,6 +2320,116 @@ function plot_pred()
             lc_ratios2 = ratios;
 
 
+            %% lens - r20
+            scheme = 'srmf_based_pred';
+            opt_type = 'lens';
+            r = num_frames;
+            gop = num_frames;
+            opt_swap_mat = 'org';
+            opt_dim = '2d';
+            
+            lens_cnts1   = zeros(size(loss_rates));
+            lens_mses1   = zeros(size(loss_rates));
+            lens_maes1   = zeros(size(loss_rates));
+            lens_ccs1    = zeros(size(loss_rates));
+            lens_ratios1 = zeros(size(loss_rates));
+
+            cnts   = zeros(size(loss_rates));
+            mses   = zeros(size(loss_rates));
+            maes   = zeros(size(loss_rates));
+            ccs    = zeros(size(loss_rates));
+            ratios = zeros(size(loss_rates));
+            for i = [1:length(loss_rates)]
+                loss_rate = loss_rates(i);
+                
+                for seed = seeds
+                    filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                    if ~(exist([srmf_dir filename]))
+                        fprintf('  %s%s\n', srmf_dir, filename);
+                        continue;
+                    end
+
+                    % fprintf(' %s\n', [srmf_dir filename]);
+                    data = load([srmf_dir filename]);
+                    mses(i)   = mses(i) + data(1);
+                    maes(i)   = maes(i) + data(2);
+                    ccs(i)    = ccs(i) + data(3);
+                    ratios(i) = ratios(i) + data(4);
+                    cnts(i) = cnts(i) + 1;
+                    % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                end
+
+                if(cnts(i) > 1)
+                    mses(i)   = mses(i) / cnts(i);
+                    maes(i)   = maes(i) / cnts(i);
+                    ccs(i)    = ccs(i) / cnts(i);
+                    ratios(i) = ratios(i) / cnts(i);
+                end
+                fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+            end
+            lens_cnts1   = cnts;
+            lens_mses1   = mses;
+            lens_maes1   = maes;
+            lens_ccs1    = ccs;
+            lens_ratios1 = ratios;
+
+
+            %% lens+knn - r20
+            scheme = 'srmf_based_pred';
+            opt_type = 'lens_knn';
+            r = 10;
+            gop = num_frames;
+            opt_swap_mat = 'org';
+            opt_dim = '2d';
+            
+            lens_cnts2   = zeros(size(loss_rates));
+            lens_mses2   = zeros(size(loss_rates));
+            lens_maes2   = zeros(size(loss_rates));
+            lens_ccs2    = zeros(size(loss_rates));
+            lens_ratios2 = zeros(size(loss_rates));
+
+            cnts   = zeros(size(loss_rates));
+            mses   = zeros(size(loss_rates));
+            maes   = zeros(size(loss_rates));
+            ccs    = zeros(size(loss_rates));
+            ratios = zeros(size(loss_rates));
+            for i = [1:length(loss_rates)]
+                loss_rate = loss_rates(i);
+                
+                for seed = seeds
+                    filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                    if ~(exist([srmf_dir filename]))
+                        fprintf('  %s%s\n', srmf_dir, filename);
+                        continue;
+                    end
+
+                    % fprintf(' %s\n', [srmf_dir filename]);
+                    data = load([srmf_dir filename]);
+                    mses(i)   = mses(i) + data(1);
+                    maes(i)   = maes(i) + data(2);
+                    ccs(i)    = ccs(i) + data(3);
+                    ratios(i) = ratios(i) + data(4);
+                    cnts(i) = cnts(i) + 1;
+                    % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                end
+
+                if(cnts(i) > 1)
+                    mses(i)   = mses(i) / cnts(i);
+                    maes(i)   = maes(i) / cnts(i);
+                    ccs(i)    = ccs(i) / cnts(i);
+                    ratios(i) = ratios(i) / cnts(i);
+                end
+                fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+            end
+            lens_cnts2   = cnts;
+            lens_mses2   = mses;
+            lens_maes2   = maes;
+            lens_ccs2    = ccs;
+            lens_ratios2 = ratios;
+
+
             %% plot mse
             clf;
             fh = figure;
@@ -2243,8 +2440,8 @@ function plot_pred()
             set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
             set(lh1, 'LineWidth', 4);
             set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh1, 'MarkerEdgeColor', 'none');
-            set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+            set(lh1, 'MarkerEdgeColor', 'auto');
+            set(lh1, 'MarkerFaceColor', 'auto');
             set(lh1, 'MarkerSize', 10);
             hold on;
 
@@ -2253,8 +2450,8 @@ function plot_pred()
             set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
             set(lh2, 'LineWidth', 4);
             set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-            set(lh2, 'MarkerEdgeColor', 'none');
-            set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+            set(lh2, 'MarkerEdgeColor', 'auto');
+            set(lh2, 'MarkerFaceColor', 'auto');
             set(lh2, 'MarkerSize', 12);
             hold on;
 
@@ -2348,6 +2545,26 @@ function plot_pred()
             set(lh11, 'MarkerSize', 12);
             hold on;
 
+            lh12 = plot(loss_rates, lens_mses1);
+            set(lh12, 'Color', 'k');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+            set(lh12, 'LineStyle', '-.');  %% line  : -|--|:|-.
+            set(lh12, 'LineWidth', 4);
+            set(lh12, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+            set(lh12, 'MarkerEdgeColor', 'auto');
+            set(lh12, 'MarkerFaceColor', 'auto');
+            set(lh12, 'MarkerSize', 12);
+            hold on;
+
+            lh13 = plot(loss_rates, lens_mses2);
+            set(lh13, 'Color', 'r');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+            set(lh13, 'LineStyle', '--');  %% line  : -|--|:|-.
+            set(lh13, 'LineWidth', 4);
+            set(lh13, 'marker', 'x');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+            set(lh13, 'MarkerEdgeColor', 'auto');
+            set(lh13, 'MarkerFaceColor', 'auto');
+            set(lh13, 'MarkerSize', 12);
+            hold on;
+
 
             if PLOT_FORMAL
                 set(lh2, 'Visible', 'off');
@@ -2355,9 +2572,9 @@ function plot_pred()
                 set(lh8, 'Visible', 'off');
                 set(lh9, 'Visible', 'off');
 
-                kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global');
+                kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11, lh12, lh13], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
             else
-                kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global');
+                kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11, lh12, lh13], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
             end
             
             set(kh, 'Location', 'BestOutside');
@@ -2385,7 +2602,7 @@ function plot_pred()
         fprintf('\nTimeRandLoss\n');
 
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -2430,6 +2647,19 @@ function plot_pred()
                 chunk_w    = 22;
                 chunk_h    = 40;
 
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                %% pca
+                block_w    = 23;
+                block_h    = 23;
+
+                %% dct
+                chunk_w    = 4;
+                chunk_h    = 4;
+
             end
             
 
@@ -2443,7 +2673,7 @@ function plot_pred()
 
             for loss_rate = loss_rates
                 %% pca1
-                r = 1;
+                r = 10;
                 opt_swap_mat = 'org';
                 opt_dim = '2d';
                 
@@ -3042,6 +3272,114 @@ function plot_pred()
                 lc_ratios2 = ratios;
 
 
+                %% LENS - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens';
+                r = num_frames;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts1   = zeros(size(elem_fracs));
+                lens_mses1   = zeros(size(elem_fracs));
+                lens_maes1   = zeros(size(elem_fracs));
+                lens_ccs1    = zeros(size(elem_fracs));
+                lens_ratios1 = zeros(size(elem_fracs));
+
+                cnts   = zeros(size(elem_fracs));
+                mses   = zeros(size(elem_fracs));
+                maes   = zeros(size(elem_fracs));
+                ccs    = zeros(size(elem_fracs));
+                ratios = zeros(size(elem_fracs));
+                for i = [1:length(elem_fracs)]
+                    elem_frac = elem_fracs(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts1   = cnts;
+                lens_mses1   = mses;
+                lens_maes1   = maes;
+                lens_ccs1    = ccs;
+                lens_ratios1 = ratios;
+
+
+                %% LENS+KNN - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens_knn';
+                r = 10;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts2   = zeros(size(elem_fracs));
+                lens_mses2   = zeros(size(elem_fracs));
+                lens_maes2   = zeros(size(elem_fracs));
+                lens_ccs2    = zeros(size(elem_fracs));
+                lens_ratios2 = zeros(size(elem_fracs));
+
+                cnts   = zeros(size(elem_fracs));
+                mses   = zeros(size(elem_fracs));
+                maes   = zeros(size(elem_fracs));
+                ccs    = zeros(size(elem_fracs));
+                ratios = zeros(size(elem_fracs));
+                for i = [1:length(elem_fracs)]
+                    elem_frac = elem_fracs(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts2   = cnts;
+                lens_mses2   = mses;
+                lens_maes2   = maes;
+                lens_ccs2    = ccs;
+                lens_ratios2 = ratios;
+
+
                 %% plot mse
                 clf;
                 fh = figure;
@@ -3052,8 +3390,8 @@ function plot_pred()
                 set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
                 set(lh1, 'LineWidth', 4);
                 set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh1, 'MarkerEdgeColor', 'none');
-                set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+                set(lh1, 'MarkerEdgeColor', 'auto');
+                set(lh1, 'MarkerFaceColor', 'auto');
                 set(lh1, 'MarkerSize', 10);
                 hold on;
 
@@ -3062,8 +3400,8 @@ function plot_pred()
                 set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
                 set(lh2, 'LineWidth', 4);
                 set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh2, 'MarkerEdgeColor', 'none');
-                set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+                set(lh2, 'MarkerEdgeColor', 'auto');
+                set(lh2, 'MarkerFaceColor', 'auto');
                 set(lh2, 'MarkerSize', 12);
                 hold on;
 
@@ -3157,6 +3495,26 @@ function plot_pred()
                 set(lh11, 'MarkerSize', 12);
                 hold on;
 
+                lh12 = plot(elem_fracs, lens_mses1);
+                set(lh12, 'Color', 'k');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh12, 'LineStyle', '-.');  %% line  : -|--|:|-.
+                set(lh12, 'LineWidth', 4);
+                set(lh12, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh12, 'MarkerEdgeColor', 'auto');
+                set(lh12, 'MarkerFaceColor', 'auto');
+                set(lh12, 'MarkerSize', 12);
+                hold on;
+
+                lh13 = plot(elem_fracs, lens_mses2);
+                set(lh13, 'Color', 'r');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh13, 'LineStyle', '--');  %% line  : -|--|:|-.
+                set(lh13, 'LineWidth', 4);
+                set(lh13, 'marker', 'x');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh13, 'MarkerEdgeColor', 'auto');
+                set(lh13, 'MarkerFaceColor', 'auto');
+                set(lh13, 'MarkerSize', 12);
+                hold on;
+
 
                 if PLOT_FORMAL
                     set(lh2, 'Visible', 'off');
@@ -3164,9 +3522,9 @@ function plot_pred()
                     set(lh8, 'Visible', 'off');
                     set(lh9, 'Visible', 'off');
 
-                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11, lh12, lh13], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 else
-                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11, lh12, lh13], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 end
                 
                 set(kh, 'Location', 'BestOutside');
@@ -3195,7 +3553,7 @@ function plot_pred()
         fprintf('\nElemRandLoss\n');
 
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -3240,6 +3598,19 @@ function plot_pred()
                 chunk_w    = 22;
                 chunk_h    = 40;
 
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                %% pca
+                block_w    = 23;
+                block_h    = 23;
+
+                %% dct
+                chunk_w    = 4;
+                chunk_h    = 4;
+
             end
             
 
@@ -3253,7 +3624,7 @@ function plot_pred()
 
             for elem_frac = elem_fracs
                 %% pca1
-                r = 1;
+                r = 10;
                 opt_swap_mat = 'org';
                 opt_dim = '2d';
                 
@@ -3852,6 +4223,115 @@ function plot_pred()
                 lc_ratios2 = ratios;
 
 
+                %% LENS - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens';
+                r = num_frames;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts1   = zeros(size(loss_rates));
+                lens_mses1   = zeros(size(loss_rates));
+                lens_maes1   = zeros(size(loss_rates));
+                lens_ccs1    = zeros(size(loss_rates));
+                lens_ratios1 = zeros(size(loss_rates));
+
+                cnts   = zeros(size(loss_rates));
+                mses   = zeros(size(loss_rates));
+                maes   = zeros(size(loss_rates));
+                ccs    = zeros(size(loss_rates));
+                ratios = zeros(size(loss_rates));
+                for i = [1:length(loss_rates)]
+                    loss_rate = loss_rates(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts1   = cnts;
+                lens_mses1   = mses;
+                lens_maes1   = maes;
+                lens_ccs1    = ccs;
+                lens_ratios1 = ratios;
+
+
+                %% lens+knn - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens_knn';
+                r = 10;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts2   = zeros(size(loss_rates));
+                lens_mses2   = zeros(size(loss_rates));
+                lens_maes2   = zeros(size(loss_rates));
+                lens_ccs2    = zeros(size(loss_rates));
+                lens_ratios2 = zeros(size(loss_rates));
+
+                cnts   = zeros(size(loss_rates));
+                mses   = zeros(size(loss_rates));
+                maes   = zeros(size(loss_rates));
+                ccs    = zeros(size(loss_rates));
+                ratios = zeros(size(loss_rates));
+                for i = [1:length(loss_rates)]
+                    loss_rate = loss_rates(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            fprintf('  %s%s\n', srmf_dir, filename);
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts2   = cnts;
+                lens_mses2   = mses;
+                lens_maes2   = maes;
+                lens_ccs2    = ccs;
+                lens_ratios2 = ratios;
+
+
                 %% plot mse
                 clf;
                 fh = figure;
@@ -3862,8 +4342,8 @@ function plot_pred()
                 set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
                 set(lh1, 'LineWidth', 4);
                 set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh1, 'MarkerEdgeColor', 'none');
-                set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+                set(lh1, 'MarkerEdgeColor', 'auto');
+                set(lh1, 'MarkerFaceColor', 'auto');
                 set(lh1, 'MarkerSize', 10);
                 hold on;
 
@@ -3872,8 +4352,8 @@ function plot_pred()
                 set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
                 set(lh2, 'LineWidth', 4);
                 set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh2, 'MarkerEdgeColor', 'none');
-                set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+                set(lh2, 'MarkerEdgeColor', 'auto');
+                set(lh2, 'MarkerFaceColor', 'auto');
                 set(lh2, 'MarkerSize', 12);
                 hold on;
 
@@ -3967,6 +4447,26 @@ function plot_pred()
                 set(lh11, 'MarkerSize', 12);
                 hold on;
 
+                lh12 = plot(loss_rates, lens_mses1);
+                set(lh12, 'Color', 'k');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh12, 'LineStyle', '-.');  %% line  : -|--|:|-.
+                set(lh12, 'LineWidth', 4);
+                set(lh12, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh12, 'MarkerEdgeColor', 'auto');
+                set(lh12, 'MarkerFaceColor', 'auto');
+                set(lh12, 'MarkerSize', 12);
+                hold on;
+
+                lh13 = plot(loss_rates, lens_mses2);
+                set(lh13, 'Color', 'r');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh13, 'LineStyle', '--');  %% line  : -|--|:|-.
+                set(lh13, 'LineWidth', 4);
+                set(lh13, 'marker', 'x');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh13, 'MarkerEdgeColor', 'auto');
+                set(lh13, 'MarkerFaceColor', 'auto');
+                set(lh13, 'MarkerSize', 12);
+                hold on;
+
 
                 if PLOT_FORMAL
                     set(lh2, 'Visible', 'off');
@@ -3974,9 +4474,9 @@ function plot_pred()
                     set(lh8, 'Visible', 'off');
                     set(lh9, 'Visible', 'off');
 
-                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11, lh12, lh13], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 else
-                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11, lh12, lh13], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 end
                 
                 set(kh, 'Location', 'BestOutside');
@@ -4005,7 +4505,7 @@ function plot_pred()
         fprintf('\nElemSyncLoss\n');
 
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -4050,6 +4550,19 @@ function plot_pred()
                 chunk_w    = 22;
                 chunk_h    = 40;
 
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                %% pca
+                block_w    = 23;
+                block_h    = 23;
+
+                %% dct
+                chunk_w    = 4;
+                chunk_h    = 4;
+
             end
             
 
@@ -4063,7 +4576,7 @@ function plot_pred()
 
             for elem_frac = elem_fracs
                 %% pca1
-                r = 1;
+                r = 10;
                 opt_swap_mat = 'org';
                 opt_dim = '2d';
                 
@@ -4662,6 +5175,115 @@ function plot_pred()
                 lc_ratios2 = ratios;
 
 
+                %% LENS - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens';
+                r = num_frames;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts1   = zeros(size(loss_rates));
+                lens_mses1   = zeros(size(loss_rates));
+                lens_maes1   = zeros(size(loss_rates));
+                lens_ccs1    = zeros(size(loss_rates));
+                lens_ratios1 = zeros(size(loss_rates));
+
+                cnts   = zeros(size(loss_rates));
+                mses   = zeros(size(loss_rates));
+                maes   = zeros(size(loss_rates));
+                ccs    = zeros(size(loss_rates));
+                ratios = zeros(size(loss_rates));
+                for i = [1:length(loss_rates)]
+                    loss_rate = loss_rates(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts1   = cnts;
+                lens_mses1   = mses;
+                lens_maes1   = maes;
+                lens_ccs1    = ccs;
+                lens_ratios1 = ratios;
+
+
+                %% lens+knn - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens_knn';
+                r = 10;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts2   = zeros(size(loss_rates));
+                lens_mses2   = zeros(size(loss_rates));
+                lens_maes2   = zeros(size(loss_rates));
+                lens_ccs2    = zeros(size(loss_rates));
+                lens_ratios2 = zeros(size(loss_rates));
+
+                cnts   = zeros(size(loss_rates));
+                mses   = zeros(size(loss_rates));
+                maes   = zeros(size(loss_rates));
+                ccs    = zeros(size(loss_rates));
+                ratios = zeros(size(loss_rates));
+                for i = [1:length(loss_rates)]
+                    loss_rate = loss_rates(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            fprintf('  %s%s\n', srmf_dir, filename);
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts2   = cnts;
+                lens_mses2   = mses;
+                lens_maes2   = maes;
+                lens_ccs2    = ccs;
+                lens_ratios2 = ratios;
+
+
                 %% plot mse
                 clf;
                 fh = figure;
@@ -4672,8 +5294,8 @@ function plot_pred()
                 set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
                 set(lh1, 'LineWidth', 4);
                 set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh1, 'MarkerEdgeColor', 'none');
-                set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+                set(lh1, 'MarkerEdgeColor', 'auto');
+                set(lh1, 'MarkerFaceColor', 'auto');
                 set(lh1, 'MarkerSize', 10);
                 hold on;
 
@@ -4682,8 +5304,8 @@ function plot_pred()
                 set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
                 set(lh2, 'LineWidth', 4);
                 set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh2, 'MarkerEdgeColor', 'none');
-                set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+                set(lh2, 'MarkerEdgeColor', 'auto');
+                set(lh2, 'MarkerFaceColor', 'auto');
                 set(lh2, 'MarkerSize', 12);
                 hold on;
 
@@ -4777,6 +5399,26 @@ function plot_pred()
                 set(lh11, 'MarkerSize', 12);
                 hold on;
 
+                lh12 = plot(loss_rates, lens_mses1);
+                set(lh12, 'Color', 'k');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh12, 'LineStyle', '-.');  %% line  : -|--|:|-.
+                set(lh12, 'LineWidth', 4);
+                set(lh12, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh12, 'MarkerEdgeColor', 'auto');
+                set(lh12, 'MarkerFaceColor', 'auto');
+                set(lh12, 'MarkerSize', 12);
+                hold on;
+
+                lh13 = plot(loss_rates, lens_mses2);
+                set(lh13, 'Color', 'r');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh13, 'LineStyle', '--');  %% line  : -|--|:|-.
+                set(lh13, 'LineWidth', 4);
+                set(lh13, 'marker', 'x');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh13, 'MarkerEdgeColor', 'auto');
+                set(lh13, 'MarkerFaceColor', 'auto');
+                set(lh13, 'MarkerSize', 12);
+                hold on;
+
 
                 if PLOT_FORMAL
                     set(lh2, 'Visible', 'off');
@@ -4784,9 +5426,9 @@ function plot_pred()
                     set(lh8, 'Visible', 'off');
                     set(lh9, 'Visible', 'off');
 
-                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11, lh12, lh13], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 else
-                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11, lh12, lh13], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 end
                 
                 set(kh, 'Location', 'BestOutside');
@@ -4815,7 +5457,7 @@ function plot_pred()
         fprintf('\nRowRandLoss\n');
 
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -4860,6 +5502,19 @@ function plot_pred()
                 chunk_w    = 22;
                 chunk_h    = 40;
 
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                %% pca
+                block_w    = 23;
+                block_h    = 23;
+
+                %% dct
+                chunk_w    = 4;
+                chunk_h    = 4;
+
             end
             
 
@@ -4873,7 +5528,7 @@ function plot_pred()
 
             for loss_rate = loss_rates
                 %% pca1
-                r = 1;
+                r = 10;
                 opt_swap_mat = 'org';
                 opt_dim = '2d';
                 
@@ -5472,6 +6127,114 @@ function plot_pred()
                 lc_ratios2 = ratios;
 
 
+                %% LENS - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens';
+                r = num_frames;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts1   = zeros(size(elem_fracs));
+                lens_mses1   = zeros(size(elem_fracs));
+                lens_maes1   = zeros(size(elem_fracs));
+                lens_ccs1    = zeros(size(elem_fracs));
+                lens_ratios1 = zeros(size(elem_fracs));
+
+                cnts   = zeros(size(elem_fracs));
+                mses   = zeros(size(elem_fracs));
+                maes   = zeros(size(elem_fracs));
+                ccs    = zeros(size(elem_fracs));
+                ratios = zeros(size(elem_fracs));
+                for i = [1:length(elem_fracs)]
+                    elem_frac = elem_fracs(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts1   = cnts;
+                lens_mses1   = mses;
+                lens_maes1   = maes;
+                lens_ccs1    = ccs;
+                lens_ratios1 = ratios;
+
+
+                %% LENS+KNN - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens_knn';
+                r = 10;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts2   = zeros(size(elem_fracs));
+                lens_mses2   = zeros(size(elem_fracs));
+                lens_maes2   = zeros(size(elem_fracs));
+                lens_ccs2    = zeros(size(elem_fracs));
+                lens_ratios2 = zeros(size(elem_fracs));
+
+                cnts   = zeros(size(elem_fracs));
+                mses   = zeros(size(elem_fracs));
+                maes   = zeros(size(elem_fracs));
+                ccs    = zeros(size(elem_fracs));
+                ratios = zeros(size(elem_fracs));
+                for i = [1:length(elem_fracs)]
+                    elem_frac = elem_fracs(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts2   = cnts;
+                lens_mses2   = mses;
+                lens_maes2   = maes;
+                lens_ccs2    = ccs;
+                lens_ratios2 = ratios;
+
+
                 %% plot mse
                 clf;
                 fh = figure;
@@ -5482,8 +6245,8 @@ function plot_pred()
                 set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
                 set(lh1, 'LineWidth', 4);
                 set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh1, 'MarkerEdgeColor', 'none');
-                set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+                set(lh1, 'MarkerEdgeColor', 'auto');
+                set(lh1, 'MarkerFaceColor', 'auto');
                 set(lh1, 'MarkerSize', 10);
                 hold on;
 
@@ -5492,8 +6255,8 @@ function plot_pred()
                 set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
                 set(lh2, 'LineWidth', 4);
                 set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh2, 'MarkerEdgeColor', 'none');
-                set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+                set(lh2, 'MarkerEdgeColor', 'auto');
+                set(lh2, 'MarkerFaceColor', 'auto');
                 set(lh2, 'MarkerSize', 12);
                 hold on;
 
@@ -5587,6 +6350,26 @@ function plot_pred()
                 set(lh11, 'MarkerSize', 12);
                 hold on;
 
+                lh12 = plot(elem_fracs, lens_mses1);
+                set(lh12, 'Color', 'k');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh12, 'LineStyle', '-.');  %% line  : -|--|:|-.
+                set(lh12, 'LineWidth', 4);
+                set(lh12, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh12, 'MarkerEdgeColor', 'auto');
+                set(lh12, 'MarkerFaceColor', 'auto');
+                set(lh12, 'MarkerSize', 12);
+                hold on;
+
+                lh13 = plot(elem_fracs, lens_mses2);
+                set(lh13, 'Color', 'r');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh13, 'LineStyle', '--');  %% line  : -|--|:|-.
+                set(lh13, 'LineWidth', 4);
+                set(lh13, 'marker', 'x');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh13, 'MarkerEdgeColor', 'auto');
+                set(lh13, 'MarkerFaceColor', 'auto');
+                set(lh13, 'MarkerSize', 12);
+                hold on;
+
 
                 if PLOT_FORMAL
                     set(lh2, 'Visible', 'off');
@@ -5594,9 +6377,9 @@ function plot_pred()
                     set(lh8, 'Visible', 'off');
                     set(lh9, 'Visible', 'off');
 
-                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11, lh12, lh13], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 else
-                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11, lh12, lh13], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 end
                 
                 set(kh, 'Location', 'BestOutside');
@@ -5625,7 +6408,7 @@ function plot_pred()
         fprintf('\nColRandLoss\n');
 
         
-        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.'};
+        files = {'tm_3g_region_all.res0.002.bin60.sub.', 'tm_3g_region_all.res0.004.bin60.sub.', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 'tm_totem.'};
 
         for file = files
             file = char(file);
@@ -5670,6 +6453,19 @@ function plot_pred()
                 chunk_w    = 22;
                 chunk_h    = 40;
 
+            elseif strcmpi(file, 'tm_totem.')
+                num_frames = 100;
+                width      = 23;
+                height     = 23;
+
+                %% pca
+                block_w    = 23;
+                block_h    = 23;
+
+                %% dct
+                chunk_w    = 4;
+                chunk_h    = 4;
+
             end
             
 
@@ -5683,7 +6479,7 @@ function plot_pred()
 
             for loss_rate = loss_rates
                 %% pca1
-                r = 1;
+                r = 10;
                 opt_swap_mat = 'org';
                 opt_dim = '2d';
                 
@@ -6282,6 +7078,114 @@ function plot_pred()
                 lc_ratios2 = ratios;
 
 
+                %% LENS - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens';
+                r = num_frames;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts1   = zeros(size(elem_fracs));
+                lens_mses1   = zeros(size(elem_fracs));
+                lens_maes1   = zeros(size(elem_fracs));
+                lens_ccs1    = zeros(size(elem_fracs));
+                lens_ratios1 = zeros(size(elem_fracs));
+
+                cnts   = zeros(size(elem_fracs));
+                mses   = zeros(size(elem_fracs));
+                maes   = zeros(size(elem_fracs));
+                ccs    = zeros(size(elem_fracs));
+                ratios = zeros(size(elem_fracs));
+                for i = [1:length(elem_fracs)]
+                    elem_frac = elem_fracs(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts1   = cnts;
+                lens_mses1   = mses;
+                lens_maes1   = maes;
+                lens_ccs1    = ccs;
+                lens_ratios1 = ratios;
+
+
+                %% LENS+KNN - r20
+                scheme = 'srmf_based_pred';
+                opt_type = 'lens_knn';
+                r = 10;
+                gop = num_frames;
+                opt_swap_mat = 'org';
+                opt_dim = '2d';
+                
+                lens_cnts2   = zeros(size(elem_fracs));
+                lens_mses2   = zeros(size(elem_fracs));
+                lens_maes2   = zeros(size(elem_fracs));
+                lens_ccs2    = zeros(size(elem_fracs));
+                lens_ratios2 = zeros(size(elem_fracs));
+
+                cnts   = zeros(size(elem_fracs));
+                mses   = zeros(size(elem_fracs));
+                maes   = zeros(size(elem_fracs));
+                ccs    = zeros(size(elem_fracs));
+                ratios = zeros(size(elem_fracs));
+                for i = [1:length(elem_fracs)]
+                    elem_frac = elem_fracs(i);
+                    
+                    for seed = seeds
+                        filename = [scheme '.' file '.' int2str(num_frames) '.' int2str(width) '.' int2str(height) '.' int2str(gop) '.r' int2str(r) '.' opt_swap_mat '.' opt_type '.' opt_dim '.' drop_ele_mode '.' drop_mode '.elem' num2str(elem_frac) '.loss' num2str(loss_rate) '.burst' int2str(burst_size) '.seed' int2str(seed) '.txt'];
+
+                        if ~(exist([srmf_dir filename]))
+                            continue;
+                        end
+
+                        % fprintf(' %s\n', [srmf_dir filename]);
+                        data = load([srmf_dir filename]);
+                        mses(i)   = mses(i) + data(1);
+                        maes(i)   = maes(i) + data(2);
+                        ccs(i)    = ccs(i) + data(3);
+                        ratios(i) = ratios(i) + data(4);
+                        cnts(i) = cnts(i) + 1;
+                        % fprintf('  %f, %f, %f, %f\n', mse, mae, cc, ratio);
+                    end
+
+                    if(cnts(i) > 1)
+                        mses(i)   = mses(i) / cnts(i);
+                        maes(i)   = maes(i) / cnts(i);
+                        ccs(i)    = ccs(i) / cnts(i);
+                        ratios(i) = ratios(i) / cnts(i);
+                    end
+                    fprintf('  rank %d > %f, %f, %f, %f\n', r, mses(i), maes(i), ccs(i), ratios(i));
+                end
+                lens_cnts2   = cnts;
+                lens_mses2   = mses;
+                lens_maes2   = maes;
+                lens_ccs2    = ccs;
+                lens_ratios2 = ratios;
+
+
                 %% plot mse
                 clf;
                 fh = figure;
@@ -6292,8 +7196,8 @@ function plot_pred()
                 set(lh1, 'LineStyle', '-');  %% line  : -|--|:|-.
                 set(lh1, 'LineWidth', 4);
                 set(lh1, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh1, 'MarkerEdgeColor', 'none');
-                set(lh1, 'MarkerFaceColor', [0.8 0.1 0]);
+                set(lh1, 'MarkerEdgeColor', 'auto');
+                set(lh1, 'MarkerFaceColor', 'auto');
                 set(lh1, 'MarkerSize', 10);
                 hold on;
 
@@ -6302,8 +7206,8 @@ function plot_pred()
                 set(lh2, 'LineStyle', '--');  %% line  : -|--|:|-.
                 set(lh2, 'LineWidth', 4);
                 set(lh2, 'marker', '*');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
-                set(lh2, 'MarkerEdgeColor', 'none');
-                set(lh2, 'MarkerFaceColor', [0 0 0.8]);
+                set(lh2, 'MarkerEdgeColor', 'auto');
+                set(lh2, 'MarkerFaceColor', 'auto');
                 set(lh2, 'MarkerSize', 12);
                 hold on;
 
@@ -6397,6 +7301,26 @@ function plot_pred()
                 set(lh11, 'MarkerSize', 12);
                 hold on;
 
+                lh12 = plot(elem_fracs, lens_mses1);
+                set(lh12, 'Color', 'k');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh12, 'LineStyle', '-.');  %% line  : -|--|:|-.
+                set(lh12, 'LineWidth', 4);
+                set(lh12, 'marker', 'o');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh12, 'MarkerEdgeColor', 'auto');
+                set(lh12, 'MarkerFaceColor', 'auto');
+                set(lh12, 'MarkerSize', 12);
+                hold on;
+
+                lh13 = plot(elem_fracs, lens_mses2);
+                set(lh13, 'Color', 'r');      %% color : r|g|b|c|m|y|k|w|[.49 1 .63]
+                set(lh13, 'LineStyle', '--');  %% line  : -|--|:|-.
+                set(lh13, 'LineWidth', 4);
+                set(lh13, 'marker', 'x');     %% marker: +|o|*|.|x|s|d|^|>|<|p|h
+                set(lh13, 'MarkerEdgeColor', 'auto');
+                set(lh13, 'MarkerFaceColor', 'auto');
+                set(lh13, 'MarkerSize', 12);
+                hold on;
+
 
                 if PLOT_FORMAL
                     set(lh2, 'Visible', 'off');
@@ -6404,9 +7328,9 @@ function plot_pred()
                     set(lh8, 'Visible', 'off');
                     set(lh9, 'Visible', 'off');
 
-                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh3, lh4, lh6, lh7, lh10, lh11, lh12, lh13], 'PCA', 'DCT-quan', 'DCT-chunk', 'SRMF+KNN', 'Nearby-fill in', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 else
-                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global');
+                    kh = legend([lh1, lh2, lh3, lh4, lh5, lh6, lh9, lh7, lh8, lh10, lh11, lh12, lh13], 'PCA-r1', 'PCA-rmax', 'DCT-quan', 'DCT-chunk', 'SRMF', 'SRMF+KNN', 'svd', 'Nearby-fill in', 'Nearby-no', 'LC-local', 'LC-global', 'LENS', 'LENS+KNN');
                 end
                 
                 set(kh, 'Location', 'BestOutside');
