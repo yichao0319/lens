@@ -68,6 +68,33 @@
    - row: 3075 rows, each row represents the traffic time series of one Base Station
      column: 26 columns, first two are gps values, next 24 columns represent 24 one-hour traffic(in bytes).
 
+5. Traffic Matrix
+   
+    - MAWI
+        1. processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top100.txt.86400.
+            25 frames
+            93 * 91
+        2. processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top150.txt.86400.
+            25 frames
+            138 * 138
+        3. processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top200.txt.86400.
+            25 frames
+            180 * 180
+        4. processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top500.txt.86400.
+            25 frames
+            93 * 91
+    - 4SQ
+
+    - SJTU WiFi
+
+    - Huawei 3G
+
+    - Totem
+        1. processed_data/subtask_parse_totem/tm/tm_totem.
+            10772 frames
+            23 * 23
+
+
 
 /*************************
  * Subtasks
