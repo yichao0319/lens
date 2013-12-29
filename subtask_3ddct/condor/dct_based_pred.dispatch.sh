@@ -2,7 +2,7 @@
 
 func="dct_based_pred"
 
-num_jobs=50
+num_jobs=75
 cnt=0
 
 ## DAG 
@@ -20,7 +20,9 @@ echo "" > tmp.$func.dag
 # files=("tm_3g_region_all.res0.004.bin60." "tm_3g_region_all.res0.002.bin60.sub.")
 # files=("tm_3g_region_all.res0.004.bin60.sub.")
 
-files=("tm_3g_region_all.res0.002.bin60.sub." "tm_3g_region_all.res0.004.bin60.sub." "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.")
+# files=("tm_3g_region_all.res0.002.bin60.sub." "tm_3g_region_all.res0.004.bin60.sub." "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.")
+
+files=("tm_totem.")
 
 
 for filename in ${files[@]}; do
@@ -149,6 +151,18 @@ for filename in ${files[@]}; do
         chunk_ws=(12 24)
         chunk_hs=(10 20)
     fi
+    #############
+    if [[ ${filename} == "tm_totem." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_totem\/tm\/"
+        num_frames=100
+        width=23
+        height=23
+
+        group_sizes=(4 100)
+        chunk_sizes=(0)
+        chunk_ws=(4)
+        chunk_hs=(4)
+    fi
 
 
 
@@ -157,7 +171,7 @@ for filename in ${files[@]}; do
     
     opt_types=("single" "chunk")
     sel_chunkss=(1 50 200)
-    quantizations=(0.1 50 100)
+    quantizations=(1 50 100)
 
 
     for seed in ${seeds[@]}; do
