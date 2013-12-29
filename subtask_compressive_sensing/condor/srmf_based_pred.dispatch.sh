@@ -2,7 +2,7 @@
 
 func="srmf_based_pred"
 
-num_jobs=50
+num_jobs=100
 cnt=0
 
 ## DAG 
@@ -19,8 +19,9 @@ echo "" > tmp.$func.dag
 # files=("tm_3g_region_all.res0.004.bin60." "tm_3g_region_all.res0.004.bin60.sub." "tm_3g_region_all.res0.002.bin60.sub.")
 # files=("tm_3g_region_all.res0.002.bin60.sub.")
 
-files=("tm_3g_region_all.res0.002.bin60.sub." "tm_3g_region_all.res0.004.bin60.sub." "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.")
+# files=("tm_3g_region_all.res0.002.bin60.sub." "tm_3g_region_all.res0.004.bin60.sub.")
 
+files=("tm_totem." "tm_3g_region_all.res0.002.bin60.sub." "tm_3g_region_all.res0.004.bin60.sub.")
 
 for filename in ${files[@]}; do
 
@@ -130,11 +131,21 @@ for filename in ${files[@]}; do
         group_sizes=(24)
         ranks=(1 5 10 20 24)
     fi
+    #############
+    if [[ ${filename} == "tm_totem." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_totem\/tm\/"
+        num_frames=100
+        width=23
+        height=23
+
+        group_sizes=(100)
+        ranks=(1 5 10 30 50 100)
+    fi
 
 
     seeds=(1 2 3 4 5)
     opt_swap_mats=("org")
-    opt_types=("srmf" "srmf_knn" "svd")
+    opt_types=("srmf" "srmf_knn" "svd" "lens" "lens_knn")
     opt_dims=("2d")
 
     for seed in ${seeds[@]}; do

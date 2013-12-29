@@ -14,6 +14,7 @@
 %%      'srmf_knn'
 %%      'svd'
 %%      'svd_base'
+%%      'lens'
 %%      'nmf'
 %%   @option_dim: the dimension of the input matrix
 %%      '2d': convert to 2D
@@ -38,9 +39,11 @@
 %% e.g. 
 %%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 5, 'org', 'srmf', '2d', 'elem', 'ind', 0.2, 0.5, 1, 1)
 %%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.002.bin60.sub.', 24, 120, 100, 24, 5, 'org', 'srmf', '2d','elem', 'ind', 0.4, 1, 1, 1)
+%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_totem/tm/', 'tm_totem.', 100, 23, 23, 100, 10, 'org', 'lens', '2d','elem', 'ind', 0.4, 0.2, 1, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, option_dim, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, seed)
+    addpath('/u/yichao/anomaly_compression/utils/lens');
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils/compressive_sensing');
     addpath('/u/yichao/anomaly_compression/utils');
@@ -72,8 +75,9 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         alpha = 100; lambda = 1000000000;
     elseif strcmpi(filename, 'tm_3g_region_all.res0.004.bin60.sub.')
         alpha = 1e-5; lambda = 1e-6;
+    elseif strcmpi(filename, 'tm_totem.')
+        alpha = 1; lambda = 10000;
     end
-            
 
 
     %% --------------------
@@ -405,6 +409,90 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             %% space
             space = space + (prod(size(u4)) + prod(size(v4)) ) * ele_size;
 
+        elseif strcmpi(option_type, 'lens')
+            if strcmpi(option_dim, '3d')
+                error('must be 2D for lens');
+            end
+
+            %% lens
+            A = speye(size(this_group, 1));
+            B = speye(size(this_group, 1));
+            C = speye(size(this_group, 1));
+            E = ~this_group_M;
+            
+            soft = 1;
+            sigma0 = [];
+            F = ones(size(this_group));
+
+            [X,Y,Z,W,sigma] = lens(this_group, this_rank, A,B,C, E,F, sigma0, soft);
+            
+            r = min(this_rank, rank(X));
+            F = (Y~=0);
+
+            soft = 0;
+            [X, Y, Z, W] = lens(this_group, r, A,B,C, E,F, sigma, soft);
+
+            % est_group = A*X + B*(Y.*F) + Z + E.*W;
+            est_group = X + Y + Z;
+
+
+            %% space
+            space = space + prod(size(this_group));
+
+        elseif strcmpi(option_type, 'lens_knn')
+            if strcmpi(option_dim, '3d')
+                error('must be 2D for lens');
+            end
+
+            %% lens
+            A = speye(size(this_group, 1));
+            B = speye(size(this_group, 1));
+            C = speye(size(this_group, 1));
+            E = ~this_group_M;
+            
+            soft = 1;
+            sigma0 = [];
+            F = ones(size(this_group));
+
+            [X,Y,Z,W,sigma] = lens(this_group, this_rank, A,B,C, E,F, sigma0, soft);
+            
+            r = min(this_rank, rank(X));
+            F = (Y~=0);
+
+            soft = 0;
+            [X, Y, Z, W] = lens(this_group, r, A,B,C, E,F, sigma, soft);
+
+            % est_group = A*X + B*(Y.*F) + Z + E.*W;
+            est_group = X + Y + Z;
+
+
+            %% KNN
+            Z = est_group;
+
+            maxDist = 3;
+            EPS = 1e-3;
+
+            for i = 1:size(Z,1)
+                for j = find(this_group_M(i,:) == 0);
+                    ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                    if (~isempty(ind))
+                        Y  = est_group(:,ind);
+                        C  = Y'*Y;
+                        nc = size(C,1);
+                        C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                        w  = C\(Y'*est_group(:,j));
+                        w  = reshape(w,1,nc);
+                        Z(i,j) = sum(this_group(i,ind).*w);
+                    end
+                end
+            end
+
+            est_group = Z;
+
+
+            %% space
+            space = space + prod(size(this_group));
+
         elseif strcmpi(option_type, 'svd')
             %% svd
             [u,v,w] = FactTensorACLS(this_group, this_rank, this_group_M, false, epsilon, 50, 1e-8, 0);
@@ -482,8 +570,8 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     % size(missing)
     % nnz(missing)
     ix = find(missing > 0);
-    missing(ix(1:min(10,length(ix))))'
-    pred(ix(1:min(10,length(ix))))'
+    % missing(ix(1:min(10,length(ix))))'
+    % pred(ix(1:min(10,length(ix))))'
 
 
     if DEBUG_WRITE == 1
