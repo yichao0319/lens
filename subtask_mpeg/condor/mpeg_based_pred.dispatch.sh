@@ -2,7 +2,7 @@
 
 func="mpeg_based_pred"
 
-num_jobs=100
+num_jobs=150
 cnt=0
 
 ## DAG 
@@ -20,7 +20,9 @@ echo "" > tmp.$func.dag
 # files=("tm_3g_region_all.res0.004.bin60." "tm_3g_region_all.res0.004.bin60.sub." "tm_3g_region_all.res0.002.bin60.sub.")
 # files=("tm_3g_region_all.res0.002.bin60.sub.")
 
-files=("tm_3g_region_all.res0.002.bin60.sub." "tm_3g_region_all.res0.004.bin60.sub." "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.")
+# files=("tm_3g_region_all.res0.002.bin60.sub." "tm_3g_region_all.res0.004.bin60.sub." "tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.")
+
+files=("tm_totem.")
 
 
 for filename in ${files[@]}; do
@@ -137,6 +139,18 @@ for filename in ${files[@]}; do
         block_ws=(12 24)
         block_hs=(10 20)
     fi
+    #############
+    if [[ ${filename} == "tm_totem." ]]; then
+        input_dir="\/u\/yichao\/anomaly_compression\/condor_data\/subtask_parse_totem\/tm\/"
+        num_frames=100
+        width=23
+        height=23
+
+        block_sizes=(0)
+        block_ws=(4)
+        block_hs=(4)
+    fi
+
 
     seeds=(1 2 3 4 5)
     opt_swap_mats=("org")
