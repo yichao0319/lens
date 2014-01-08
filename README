@@ -86,13 +86,106 @@
     - 4SQ
 
     - SJTU WiFi
+        1. processed_data/subtask_parse_sjtu_wifi/tm/tm_upload.sort_ips.ap.country.txt.3600.top400.
+            19 frames
+            250 * 193
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_download.sort_ips.ap.country.txt.3600.top400.
+            19 frames
+            193 * 250
+        2. processed_data/subtask_parse_sjtu_wifi/tm/tm_upload.sort_ips.ap.bgp.sub_CN.txt.3600.top400.
+            19 frames
+            250 * 400
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.
+            19 frames
+            400 * 250
+        3. processed_data/subtask_parse_sjtu_wifi/tm/tm_upload.sort_ips.ap.gps.5.txt.3600.top400.
+            19 frames
+            250 * 400
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_download.sort_ips.ap.gps.5.txt.3600.top400.
+            19 frames
+            400 * 250
+        
+        4. processed_data/subtask_parse_sjtu_wifi/tm/tm_upload.sjtu_wifi.ap_load.600.txt
+            114 (time) * 250 (APs)
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_download.sjtu_wifi.ap_load.600.txt
+            114 (time) * 250 (APs)
+
 
     - Huawei 3G
+        1. processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.006.bin10.sub.
+            146 frames
+            26 * 21
+
+        2. processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs0.all.bin10.txt
+            group by BS
+            BS types: unknown
+            1074 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs1.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            458 * 145
+        
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs2.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            48 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs3.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            472 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs4.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            24 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs5.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            1 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs6.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            240 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs7.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            14 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs8.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            19 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs9.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            24 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs10.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            82 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs11.all.bin10.txt
+            group by BS
+            BS types: general urban area
+            13 * 145
+
+
 
     - Totem
         1. processed_data/subtask_parse_totem/tm/tm_totem.
             10772 frames
             23 * 23
+
+    - Abilene
+        1. data/abilene/X
+            1008 (time) * 121 (od pairs)
 
 
 
