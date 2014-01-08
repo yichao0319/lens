@@ -15,3 +15,11 @@ steps:
      according to the sorting result, generate TM
 8. tm_top.m
      select the most popular k venues
+
+9. gen_tm_ap_load.m
+     read 3D TM output above and convert to 2D TM by only considering the traffic load of APs.
+
+10. ap_topology.pl
+     try to group APs by it's topology.
+     it's not complete yet because cannot find the map between AP IP and the topology figure.
+
