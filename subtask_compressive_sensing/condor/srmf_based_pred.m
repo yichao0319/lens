@@ -39,10 +39,11 @@
 %% e.g. 
 %%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sort_ips.ap.bgp.sub_CN.txt.3600.top400.', 8, 217, 400, 4, 5, 'org', 'srmf', '2d', 'elem', 'ind', 0.2, 0.5, 1, 1)
 %%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.002.bin60.sub.', 24, 120, 100, 24, 5, 'org', 'srmf', '2d','elem', 'ind', 0.4, 1, 1, 1)
-%%     [mse, mae, cc, ratio] = srmf_based_pred('../processed_data/subtask_parse_totem/tm/', 'tm_totem.', 100, 23, 23, 100, 10, 'org', 'lens', '2d','elem', 'ind', 0.4, 0.2, 1, 1)
+%%     [mse, mae, cc, ratio, tp, tn, fp, fn, precision, recall, f1score, jaccard] = srmf_based_pred('../processed_data/subtask_parse_totem/tm/', 'tm_totem.', 100, 23, 23, 100, 1, 'org', 'lens', '2d','elem', 'ind', 0.4, 0.2, 1, 1, 0.1, 0.3, 1)
+%%     [mse, mae, cc, ratio, tp, tn, fp, fn, precision, recall, f1score, jaccard, best_thresh] = srmf_based_pred('../condor_data/abilene/', 'X', 100, 121, 1, 100, 10, 'org', 'lens', '2d','elem', 'ind', 1, 0.6, 1, 1, 0.001, 0.3, 1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, option_dim, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, seed)
+function [mse, mae, cc, ratio, tp, tn, fp, fn, precision, recall, f1score, jaccard, normalized_y, y_val, best_thresh] = srmf_based_pred(input_TM_dir, filename, num_frames, width, height, group_size, r, option_swap_mat, option_type, option_dim, drop_ele_mode, drop_mode, elem_frac, loss_rate, burst_size, sigma_magnitude, sigma_noise, thresh, seed, param1, param2)
     addpath('/u/yichao/anomaly_compression/utils/lens');
     addpath('/u/yichao/anomaly_compression/utils/mirt_dctn');
     addpath('/u/yichao/anomaly_compression/utils/compressive_sensing');
@@ -70,13 +71,45 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     ele_size = 32;  %% size of each elements in bits
     epsilon = 0.01;
 
-    alpha = 100; lambda = 1000000000;
-    if strcmpi(filename, 'tm_3g_region_all.res0.002.bin60.sub.')
+    if nargin < 21
         alpha = 100; lambda = 1000000000;
-    elseif strcmpi(filename, 'tm_3g_region_all.res0.004.bin60.sub.')
-        alpha = 1e-5; lambda = 1e-6;
-    elseif strcmpi(filename, 'tm_totem.')
-        alpha = 1; lambda = 10000;
+        %% 3G
+        if strcmpi(filename, 'tm_3g_region_all.res0.002.bin60.sub.')
+            alpha = 100; lambda = 1000000000;
+            thresh_y = 300000000;
+        elseif strcmpi(filename, 'tm_3g_region_all.res0.004.bin60.sub.')
+            alpha = 1e-5; lambda = 1e-6;
+            thresh_y = 300000000;
+        elseif strcmpi(filename, 'tm_3g_region_all.res0.006.bin10.sub.')
+            alpha = 100; lambda = 10000000;
+            thresh_y = 600000000;
+        elseif strcmpi(filename, 'tm_3g.cell.bs.bs6.all.bin10.txt')
+            alpha = 100; lambda = 100000000;
+            thresh_y = 300000000;
+        elseif strcmpi(filename, 'tm_3g.cell.bs.bs1.all.bin10.txt')
+            alpha = 100; lambda = 10000000;
+            thresh_y = 300000000;
+        %% GEANT
+        elseif strcmpi(filename, 'tm_totem.')
+            alpha = 1; lambda = 10000;
+            thresh_y = 600000;
+        %% Abilene
+        elseif strcmpi(filename, 'X')
+            alpha = 10; lambda = 1000000;
+            thresh_y = 300000000;
+        %% SJTU WiFi
+        elseif strcmpi(filename, 'tm_upload.sjtu_wifi.ap_load.600.txt')
+            alpha = 100; lambda = 1000;
+            thresh_y = 300000000;
+        elseif strcmpi(filename, 'tm_download.sjtu_wifi.ap_load.600.txt')
+            alpha = 100; lambda = 0;
+            thresh_y = 300000000;
+        else
+            error('wrong file name');
+        end
+    else
+        alpha = param1; 
+        lambda = param2;
     end
 
 
@@ -85,6 +118,8 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     %% --------------------
     % input_4sq_dir  = '../processed_data/subtask_process_4sq/TM/';
     space = 0;
+    normalized_y = 0;
+    y_val = 0;
 
 
     %% --------------------
@@ -99,16 +134,42 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     %% --------------------
     if DEBUG2, fprintf('read data matrix\n'); end
 
-    data = zeros(height, width, num_frames);
-    for frame = [0:num_frames-1]
-        if DEBUG0, fprintf('  frame %d\n', frame); end
-
+    if strcmpi(filename, 'X') | ...
+       strcmpi(filename, 'tm_upload.sjtu_wifi.ap_load.600.txt') | ...
+       strcmpi(filename, 'tm_download.sjtu_wifi.ap_load.600.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs0.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs1.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs2.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs3.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs4.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs5.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs6.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs7.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs8.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs9.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs10.all.bin10.txt') | ...
+       strcmpi(filename, 'tm_3g.cell.bs.bs11.all.bin10.txt')
         %% load data matrix
-        this_matrix_file = [input_TM_dir filename int2str(frame) '.txt'];
+        data = zeros(height, width, num_frames);
+
+        this_matrix_file = [input_TM_dir filename];
         if DEBUG0, fprintf('    file = %s\n', this_matrix_file); end
         
-        tmp = load(this_matrix_file);
-        data(:,:,frame+1) = tmp(1:height, 1:width);
+        tmp = load(this_matrix_file)';
+        data(:, :, :) = tmp(:, 1:num_frames);
+
+    else
+        data = zeros(height, width, num_frames);
+        for frame = [0:num_frames-1]
+            if DEBUG0, fprintf('  frame %d\n', frame); end
+
+            %% load data matrix
+            this_matrix_file = [input_TM_dir filename int2str(frame) '.txt'];
+            if DEBUG0, fprintf('    file = %s\n', this_matrix_file); end
+            
+            tmp = load(this_matrix_file);
+            data(:,:,frame+1) = tmp(1:height, 1:width);
+        end
     end
     sx = size(data(:,:,1));
     nx = prod(sx);
@@ -151,6 +212,42 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         M = ones(size(data));
     end
 
+    % M = ones(size(data));
+
+
+    %% --------------------
+    %% Add anomaly and noise
+    %% --------------------
+    if DEBUG2, fprintf('Add anomaly and noise\n'); end
+
+    orig_data = data;
+    % mean_data_of_max = mean(data(:)) / max(data(:))
+    tmp_sx = size(data);
+    data_2d = reshape(data, [], tmp_sx(3));
+    M_2d    = reshape(M, [], tmp_sx(3));
+    [n, m] = size(data_2d);
+    ny = 2 * min(m, n);
+    
+    keep = 1;
+    while(keep > 0 & keep < 100)
+        Y = zeros(n, m);
+        Y(randsample(n*m, ny)) = sign(randn(ny, 1)) * max(data_2d(:)) * sigma_magnitude;
+        
+        %% make sure at least one anomaly is not in missing portion
+        if nnz(Y .* M_2d) == 0
+            keep = keep + 1;
+        else
+            keep = 0;
+        end
+    end
+
+    Z = randn(n, m) * max(data_2d(:)) * sigma_noise;
+    D = data_2d + Y + Z;
+
+    data    = reshape(D, tmp_sx);
+    anomaly = reshape(Y, tmp_sx);
+    noise   = reshape(Z, tmp_sx);
+
 
     %% --------------------
     %% swap matrix row and column
@@ -159,59 +256,98 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     %% 2: geo
     %% 3: correlated coefficient
     %% --------------------
+    % if DEBUG2, fprintf('swap matrix row and column\n'); end
+
+    % if strcmp(option_swap_mat, 'org')
+    %     %% 0: original matrix
+    %     mapping_rows = [1:height];
+    %     mapping_cols = [1:width];
+    % elseif strcmp(option_swap_mat, 'rand')
+    %     %% 1: randomize raw and col
+    %     mapping_rows = randperm(height);
+    %     mapping_cols = randperm(width);
+    % elseif strcmp(option_swap_mat, 'geo')
+    %     %% 2: geo -- only for 4sq TM
+    %     % [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
+    %     % if DEBUG0
+    %     %     fprintf('  size of location: %d, %d\n', size(location));
+    %     %     fprintf('  size of mass: %d, %d\n', size(mass));
+    %     % end
+        
+    %     % mapping = sort_by_lat_lng(location, width, height);
+
+    % elseif strcmp(option_swap_mat, 'cc')
+    %     %% 3: correlated coefficient
+        
+    %     tmp_rows = reshape(data, height, []);
+    %     tmp_cols = zeros(height*num_frames, width);
+    %     for f = [1:num_frames]
+    %         tmp_cols( (f-1)*height+1:f*height, : ) = data(:,:,f);
+    %     end
+
+    %     %% corrcoef: rows=obervations, col=features
+    %     coef_rows = corrcoef(tmp_rows');
+    %     coef_cols = corrcoef(tmp_cols);
+
+    %     mapping_rows = sort_by_coef(coef_rows);
+    %     mapping_cols = sort_by_coef(coef_cols);
+
+    % elseif strcmp(option_swap_mat, 'pop')
+    %     %% 4: popularity
+    %     error('swap according to popularity: not done yet\n');
+        
+    % end
+
+    % %% update the data matrix according to the mapping
+    % for f = [1:num_frames]
+    %     data(:,:,f) = map_matrix(data(:,:,f), mapping_rows, mapping_cols);
+    %     M(:,:,f)    = map_matrix(M(:,:,f), mapping_rows, mapping_cols);
+    % end
+
     if DEBUG2, fprintf('swap matrix row and column\n'); end
+
+    orig_sx = size(data);
+    % fprintf('size: %d\n',orig_sx);
+    data = reshape(data, orig_sx(1) * orig_sx(2), orig_sx(3));
+    M    = reshape(M,    orig_sx(1) * orig_sx(2), orig_sx(3));
+
+    % data = [1:10; 1:5, 10:-1:6; 11:20; 11:15, 20:-1:16; 1:3,11,5:8,12,10];
 
     if strcmp(option_swap_mat, 'org')
         %% 0: original matrix
-        mapping_rows = [1:height];
-        mapping_cols = [1:width];
+        mapping_rows = [1:size(data,1)];
+        
     elseif strcmp(option_swap_mat, 'rand')
         %% 1: randomize raw and col
-        mapping_rows = randperm(height);
-        mapping_cols = randperm(width);
-    elseif strcmp(option_swap_mat, 'geo')
-        %% 2: geo -- only for 4sq TM
-        % [location, mass] = get_venue_info([input_4sq_dir filename], '4sq', width, height);
-        % if DEBUG0
-        %     fprintf('  size of location: %d, %d\n', size(location));
-        %     fprintf('  size of mass: %d, %d\n', size(mass));
-        % end
-        
-        % mapping = sort_by_lat_lng(location, width, height);
-
+        mapping_rows = randperm(size(data,1));
+    
     elseif strcmp(option_swap_mat, 'cc')
-        %% 3: correlated coefficient
-        
-        tmp_rows = reshape(data, height, []);
-        tmp_cols = zeros(height*num_frames, width);
-        for f = [1:num_frames]
-            tmp_cols( (f-1)*height+1:f*height, : ) = data(:,:,f);
-        end
-
+        %% 3: correlated coefficient        
         %% corrcoef: rows=obervations, col=features
-        coef_rows = corrcoef(tmp_rows');
-        coef_cols = corrcoef(tmp_cols);
-
+        coef_rows = corrcoef(data');
+        
         mapping_rows = sort_by_coef(coef_rows);
-        mapping_cols = sort_by_coef(coef_cols);
+        
 
     elseif strcmp(option_swap_mat, 'pop')
         %% 4: popularity
-        error('swap according to popularity: not done yet\n');
+        [b, mapping_rows] = sort(sum(data,2));
         
     end
 
-    %% update the data matrix according to the mapping
-    for f = [1:num_frames]
-        data(:,:,f) = map_matrix(data(:,:,f), mapping_rows, mapping_cols);
-        M(:,:,f)    = map_matrix(M(:,:,f), mapping_rows, mapping_cols);
-    end
+    data = data(mapping_rows, :);
+    M    = M(mapping_rows, :);
+
+    data = reshape(data, orig_sx);
+    M    = reshape(M,    orig_sx);
+    
 
     if DEBUG1, fprintf('  size of data matrix: %d, %d, %d\n', size(data)); end
 
 
     compared_data = data;
     compared_data(~M) = 0;
+    detect_anomaly = zeros(size(data));
 
     %% --------------------
     %% apply SRMF to each Group of Pictures (GoP)
@@ -220,7 +356,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         gop_s = (gop - 1) * group_size + 1;
         gop_e = min(num_frames, gop * group_size);
 
-        if DEBUG1 == 0, fprintf('gop %d: frame %d-%d\n', gop, gop_s, gop_e); end
+        if DEBUG1, fprintf('gop %d: frame %d-%d\n', gop, gop_s, gop_e); end
 
         this_group   = data(:, :, gop_s:gop_e);
         this_group_M = M(:, :, gop_s:gop_e);
@@ -251,10 +387,9 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         nx = prod(sx);
         n  = length(sx);
 
-        [A, b] = XM2Ab(this_group, this_group_M);
-
         if strcmpi(option_type, 'base')
             %% baseline
+            [A, b] = XM2Ab(this_group, this_group_M);
             est_group = EstimateBaseline(A, b, sx);
 
             %% space
@@ -262,6 +397,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
 
         elseif strcmpi(option_type, 'srtf')
             %% SRMF
+            [A, b] = XM2Ab(this_group, this_group_M);
             config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
             % [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, 10, 1e-1, 50);
             [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
@@ -273,6 +409,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             space = space + (prod(size(u4)) + prod(size(v4)) + prod(size(w4))) * ele_size;
 
         elseif strcmpi(option_type, 'srmf')
+            [A, b] = XM2Ab(this_group, this_group_M);
             config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
 
             [u4, v4] = SRMF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
@@ -285,6 +422,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
 
         elseif strcmpi(option_type, 'srtf_knn')
             %% SRMF + KNN
+            [A, b] = XM2Ab(this_group, this_group_M);
             config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
             [u4, v4, w4] = SRTF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
 
@@ -347,6 +485,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
 
         elseif strcmpi(option_type, 'srmf_knn')
             %% SRMF + KNN
+            [A, b] = XM2Ab(this_group, this_group_M);
             config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
             [u4, v4] = SRMF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
             
@@ -379,11 +518,16 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
                 end
                 est_group = reshape(Z', sx(1), sx(2), sx(3));
             elseif strcmpi(option_dim, '2d')
+                
                 Z = est_group;
 
                 maxDist = 3;
                 EPS = 1e-3;
 
+                % Z            = Z';
+                % this_group_M = this_group_M';
+                % est_group    = est_group';
+                % this_group   = this_group';
 
                 for i = 1:size(Z,1)
                     for j = find(this_group_M(i,:) == 0);
@@ -400,6 +544,11 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
                     end
                 end
                 
+                % Z            = Z';
+                % this_group_M = this_group_M';
+                % est_group    = est_group';
+                % this_group   = this_group';
+
                 est_group = Z;
             else
                 error('wrong option_dim');
@@ -434,6 +583,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
 
             % est_group = A*X + B*(Y.*F) + Z + E.*W;
             est_group = X + Y + Z;
+            detect_anomaly(:, :, gop_s:gop_e) = reshape(Y, orig_sx);
 
 
             %% space
@@ -460,14 +610,90 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             F = (Y~=0);
 
             soft = 0;
-            [X, Y, Z, W] = lens(this_group, r, A,B,C, E,F, sigma, soft);
+            [X2, Y2, Z2, W2] = lens(this_group, r, A,B,C, E,F, sigma, soft);
 
-            % est_group = A*X + B*(Y.*F) + Z + E.*W;
-            est_group = X + Y + Z;
-
+            % y2 = reshape(anomaly, [], size(anomaly,3));
+            % x2 = reshape(orig_data, [], size(orig_data,3));
+            % m2 = reshape(M, [], size(M,3));
+            % error_a = norm(x2-X2,'fro')/ (norm(x2,'fro') + norm(y2.*m2,'fro'))
+            % error_b = norm(y2.*m2-Y2.*m2,'fro')/(norm(x2,'fro') + norm(y2.*m2,'fro'))
+            
+            Z = X2 + Y2 + Z2;
+            
 
             %% KNN
-            Z = est_group;
+            maxDist = 3;
+            EPS = 1e-3;
+
+            % this_group_M = this_group_M';
+            % Z            = Z';
+            % X2           = X2';
+            % this_group   = this_group';
+            
+            for i = 1:size(Z,1)
+                for j = find(this_group_M(i,:) == 0);
+                    ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                    if (~isempty(ind))
+                        Y  = X2(:,ind);
+                        C  = Y'*Y;
+                        nc = size(C,1);
+                        C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                        w  = C\(Y'*X2(:,j));
+                        w  = reshape(w,1,nc);
+                        Z(i,j) = sum(Z(i,ind).*w);
+                    end
+                end
+            end
+
+            % this_group_M = this_group_M';
+            % Z            = Z';
+            % X2           = X2';
+            % this_group   = this_group';
+
+
+            est_group    = Z;
+            detect_anomaly(:, :, gop_s:gop_e) = reshape(Y2, orig_sx);
+
+
+            %% space
+            space = space + prod(size(this_group));
+
+        elseif strcmpi(option_type, 'lens_knn2')
+            if strcmpi(option_dim, '3d')
+                error('must be 2D for lens');
+            end
+
+            %% lens
+            A = speye(size(this_group, 1));
+            B = speye(size(this_group, 1));
+            C = speye(size(this_group, 1));
+            E = ~this_group_M;
+            
+            soft = 1;
+            sigma0 = [];
+            F = ones(size(this_group));
+
+            [X,Y,Z,W,sigma] = lens(this_group, this_rank, A,B,C, E,F, sigma0, soft);
+            
+            r = min(this_rank, rank(X));
+            F = (Y~=0);
+
+            soft = 0;
+            [X2, Y2, Z2, W2] = lens(this_group, r, A,B,C, E,F, sigma, soft);
+
+            % y2 = reshape(anomaly, [], size(anomaly,3));
+            % x2 = reshape(orig_data, [], size(orig_data,3));
+            % m2 = reshape(M, [], size(M,3));
+            % error_a = norm(x2-X2,'fro')/ (norm(x2,'fro') + norm(y2.*m2,'fro'))
+            % error_b = norm(y2.*m2-Y2.*m2,'fro')/(norm(x2,'fro') + norm(y2.*m2,'fro'))
+            
+            %% KNN
+            Z = X2;
+
+            % this_group_M = this_group_M';
+            % Z            = Z';
+            % X2           = X2';
+            % this_group   = this_group';
 
             maxDist = 3;
             EPS = 1e-3;
@@ -475,6 +701,236 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             for i = 1:size(Z,1)
                 for j = find(this_group_M(i,:) == 0);
                     ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                    if (~isempty(ind))
+                        Y  = X2(:,ind);
+                        C  = Y'*Y;
+                        nc = size(C,1);
+                        C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                        w  = C\(Y'*X2(:,j));
+                        w  = reshape(w,1,nc);
+                        Z(i,j) = sum(Z(i,ind).*w);
+                    end
+                end
+            end
+
+            % this_group_M = this_group_M';
+            % Z            = Z';
+            % X2           = X2';
+            % this_group   = this_group';
+
+
+            % est_group = Z + Y2;
+            est_group    = Z + Y2 + Z2;
+            detect_anomaly(:, :, gop_s:gop_e) = reshape(Y2, orig_sx);
+
+            y_val        = norm(Y2, 1);
+            normalized_y = norm(Y2, 1) / norm(Z + Y2 + Z2, 1);
+            fprintf('  y-ratio=%f (%f / %f)\n', normalized_y, norm(Y2, 1), norm(Z + Y2 + Z2, 1));
+            
+
+            %% space
+            space = space + prod(size(this_group));
+
+
+        elseif strcmpi(option_type, 'srmf_lens_knn')
+            if strcmpi(option_dim, '3d')
+                error('must be 2D for lens');
+            end
+
+            %% lens
+            A = speye(size(this_group, 1));
+            B = speye(size(this_group, 1));
+            C = speye(size(this_group, 1));
+            E = ~this_group_M;
+            
+            soft = 1;
+            sigma0 = [];
+            F = ones(size(this_group));
+
+            [X,Y,Z,W,sigma] = lens(this_group, this_rank, A,B,C, E,F, sigma0, soft);
+            
+            r = min(this_rank, rank(X));
+            F = (Y~=0);
+
+            soft = 0;
+            [X2, Y2, Z2, W2] = lens(this_group, r, A,B,C, E,F, sigma, soft);
+
+            % y2 = reshape(anomaly, [], size(anomaly,3));
+            % x2 = reshape(orig_data, [], size(orig_data,3));
+            % m2 = reshape(M, [], size(M,3));
+            % error_a = norm(x2-X2,'fro')/ (norm(x2,'fro') + norm(y2.*m2,'fro'))
+            % error_b = norm(y2.*m2-Y2.*m2,'fro')/(norm(x2,'fro') + norm(y2.*m2,'fro'))
+            
+            %% KNN
+            Z = X2;
+
+            % this_group_M = this_group_M';
+            % Z            = Z';
+            % X2           = X2';
+            % this_group   = this_group';
+
+            maxDist = 3;
+            EPS = 1e-3;
+
+            for i = 1:size(Z,1)
+                for j = find(this_group_M(i,:) == 0);
+                    ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                    if (~isempty(ind))
+                        Y  = X2(:,ind);
+                        C  = Y'*Y;
+                        nc = size(C,1);
+                        C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                        w  = C\(Y'*X2(:,j));
+                        w  = reshape(w,1,nc);
+                        Z(i,j) = sum(Z(i,ind).*w);
+                    end
+                end
+            end
+
+            % this_group_M = this_group_M';
+            % Z            = Z';
+            % X2           = X2';
+            % this_group   = this_group';
+
+
+            y_val        = norm(Y2, 1);
+            normalized_y = norm(Y2, 1) / norm(Z + Y2 + Z2, 1);
+            fprintf('  y-ratio=%f (%f / %f)\n', normalized_y, norm(Y2, 1), norm(Z + Y2 + Z2, 1));
+            
+            if(y_val < thresh_y)
+                %% SRMF + KNN
+                [A, b] = XM2Ab(this_group, this_group_M);
+                config = ConfigSRTF(A, b, this_group, this_group_M, sx, this_rank, this_rank, epsilon, true);
+                [u4, v4] = SRMF(this_group, this_rank, this_group_M, config, alpha, lambda, 50);
+                
+                est_group = u4 * v4';
+                est_group = max(0, est_group);
+
+                Z = est_group;
+
+                
+                maxDist = 3;
+                EPS = 1e-3;
+
+                % this_group_M = this_group_M';
+                % Z            = Z';
+                % this_group   = this_group';
+                % est_group    = est_group';
+
+                for i = 1:size(Z,1)
+                    for j = find(this_group_M(i,:) == 0);
+                        ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                        if (~isempty(ind))
+                            Y  = est_group(:,ind);
+                            C  = Y'*Y;
+                            nc = size(C,1);
+                            C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                            w  = C\(Y'*est_group(:,j));
+                            w  = reshape(w,1,nc);
+                            Z(i,j) = sum(this_group(i,ind).*w);
+                        end
+                    end
+                end
+                
+                % this_group_M = this_group_M';
+                % Z            = Z';
+                % this_group   = this_group';
+                % est_group    = est_group';
+
+
+                est_group = Z;
+                detect_anomaly(:, :, gop_s:gop_e) = data - reshape(est_group, orig_sx);
+                
+                %% space
+                space = space + (prod(size(u4)) + prod(size(v4)) ) * ele_size;
+            else
+
+                % est_group = Z + Y2;
+                est_group = Z + Y2 + Z2;
+                detect_anomaly(:, :, gop_s:gop_e) = reshape(Y2, orig_sx);
+
+                %% space
+                space = space + prod(size(this_group)) * ele_size;
+            end
+
+        
+        elseif strcmpi(option_type, 'srmf_lens_knn2')
+            if strcmpi(option_dim, '3d')
+                error('must be 2D for lens');
+            end
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %% lens
+            A = speye(size(this_group, 1));
+            B = speye(size(this_group, 1));
+            C = speye(size(this_group, 1));
+            E = ~this_group_M;
+            
+            soft = 1;
+            sigma0 = [];
+            F = ones(size(this_group));
+
+            [X,Y,Z,W,sigma] = lens(this_group, this_rank, A,B,C, E,F, sigma0, soft);
+            
+            r = min(this_rank, rank(X));
+            F = (Y~=0);
+
+            soft = 0;
+            [X2, Y2, Z2, W2] = lens(this_group, r, A,B,C, E,F, sigma, soft);
+
+            % y2 = reshape(anomaly, [], size(anomaly,3));
+            % x2 = reshape(orig_data, [], size(orig_data,3));
+            % m2 = reshape(M, [], size(M,3));
+            % error_a = norm(x2-X2,'fro')/ (norm(x2,'fro') + norm(y2.*m2,'fro'))
+            % error_b = norm(y2.*m2-Y2.*m2,'fro')/(norm(x2,'fro') + norm(y2.*m2,'fro'))
+            
+            %% KNN
+            Z = X2;
+
+            maxDist = 3;
+            EPS = 1e-3;
+
+            for i = 1:size(Z,1)
+                for j = find(this_group_M(i,:) == 0);
+                    ind = find((this_group_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
+                    if (~isempty(ind))
+                        Y  = X2(:,ind);
+                        C  = Y'*Y;
+                        nc = size(C,1);
+                        C  = C + max(eps,EPS*trace(C)/nc)*speye(nc);
+                        w  = C\(Y'*X2(:,j));
+                        w  = reshape(w,1,nc);
+                        Z(i,j) = sum(Z(i,ind).*w);
+                    end
+                end
+            end
+
+            est_group_lens = Z + Y2 + Z2;
+            detect_anomaly_lens = reshape(Y2, orig_sx);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            new_M = this_group_M;
+            new_M(Y2 > 0) = 0;
+
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %% SRMF + KNN
+            [A, b] = XM2Ab(this_group, new_M);
+            config = ConfigSRTF(A, b, this_group, new_M, sx, this_rank, this_rank, epsilon, true);
+            [u4, v4] = SRMF(this_group, this_rank, new_M, config, alpha, lambda, 50);
+            
+            est_group = u4 * v4';
+            est_group = max(0, est_group);
+
+            Z = est_group;
+
+            
+            maxDist = 3;
+            EPS = 1e-3;
+
+            for i = 1:size(Z,1)
+                for j = find(new_M(i,:) == 0);
+                    ind = find((new_M(i,:)==1) & (abs((1:size(Z,2)) - j) <= maxDist));
                     if (~isempty(ind))
                         Y  = est_group(:,ind);
                         C  = Y'*Y;
@@ -487,11 +943,35 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
                 end
             end
 
-            est_group = Z;
+            est_group_srmf = Z;
+            detect_anomaly_srmf = data - reshape(est_group_srmf, orig_sx);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            tmp = size(M);
+            if (nnz(~M) / tmp(1) / tmp(2) / tmp(3) >= 0.9)
+                use_srmf = ones(tmp);
+            else
+                this_thresh = mean(abs(Y2(:))) + 2 * std(abs(Y2(:)));
+                use_srmf = (abs(Y2) == 0);
+            end
+            use_lens = ~use_srmf;
+            
+            est_group(use_srmf) = est_group_srmf(use_srmf);
+            est_group(use_lens) = est_group_lens(use_lens);
 
+            tmp = zeros(size(detect_anomaly(:, :, gop_s:gop_e)));
+            tmp(use_srmf) = detect_anomaly_srmf(use_srmf);
+            tmp(use_lens) = detect_anomaly_lens(use_lens);
+            detect_anomaly(:, :, gop_s:gop_e) = tmp;
 
-            %% space
-            space = space + prod(size(this_group));
+            % dlmwrite('./tmp_output/y_srmf.txt', sort(abs(Y2(use_srmf))), 'delimiter', '\t');
+            % dlmwrite('./tmp_output/y_lens.txt', sort(abs(Y2(use_lens))), 'delimiter', '\t');
+
+            % win_srmf = (abs(this_group - est_group_srmf) < abs(this_group - est_group_lens));
+            % win_lens = ~win_srmf;
+            % dlmwrite('./tmp_output/y_gt_srmf.txt', sort(abs(Y2(win_srmf))), 'delimiter', '\t');
+            % dlmwrite('./tmp_output/y_gt_lens.txt', sort(abs(Y2(win_lens))), 'delimiter', '\t');
+            
 
         elseif strcmpi(option_type, 'svd')
             %% svd
@@ -515,7 +995,7 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
             space = space + (prod(size(u)) + prod(size(v)) + prod(size(w))) * ele_size;
 
             tmp = this_group - est_group;
-            fprintf('mean=%f\n', mean(tmp(:)) );
+            % fprintf('mean=%f\n', mean(tmp(:)) );
 
         elseif strcmpi(option_type, 'nmf')
             %% nmf
@@ -539,11 +1019,15 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
         end
 
 
-        tmp = abs(compared_data - data);
-        fprintf('mean=%f\n', mean(tmp(:)) );
+        % tmp = abs(compared_data - data);
+        % fprintf('mean=%f\n', mean(tmp(:)) );
     end
 
 
+    %% --------------------
+    %% Error
+    %% --------------------
+    % data = orig_data;
     meanX2 = mean(data(~M).^2);
     meanX = mean(data(~M));
 
@@ -562,7 +1046,60 @@ function [mse, mae, cc, ratio] = srmf_based_pred(input_TM_dir, filename, num_fra
     end
     ratio = space / (width*height*num_frames*ele_size);
 
-    fprintf('results=%f, %f, %f, %f\n', mse, mae, cc, ratio);
+    fprintf('mse=%f, mae=%f, cc=%f, ratio=%f\n', mse, mae, cc, ratio);
+
+
+
+    %% --------------------
+    %% detect anomaly
+    %% --------------------
+    if strcmpi(option_type, 'lens') ~= 1 & strcmpi(option_type, 'lens_knn') ~= 1 & strcmpi(option_type, 'lens_knn2') ~= 1 & strcmpi(option_type, 'srmf_lens_knn') ~= 1
+        % detect_anomaly = (abs(data - compared_data) > thresh*std(data(:)));
+        detect_anomaly = data - compared_data;
+    end
+
+    anomaly = (anomaly ~= 0);
+    % detect_anomaly = (detect_anomaly ~= 0);
+    % mean_det_anom = mean(abs(detect_anomaly(:)));
+    % std_det_anom  = std(abs(detect_anomaly(:)));
+    % detect_anomaly = (abs(detect_anomaly) > mean_det_anom+thresh*std_det_anom);
+    max_det_anom   = max(abs(detect_anomaly(:)));
+
+
+    if thresh == -1
+        best_thresh = -1;
+        best_f1     = -1;
+        for thresh = [0:0.01:0.2, 0.25:0.05:1]
+            tmp = (abs(detect_anomaly) > thresh*max_det_anom);
+            precision = nnz(anomaly.*tmp.*M)/nnz((tmp~=0).*M);
+            recall    = nnz(anomaly.*tmp.*M)/nnz((anomaly~=0).*M);
+            f1score   = 2 * precision * recall / (precision + recall);
+
+            if f1score > best_f1
+                best_f1 = f1score;
+                best_thresh = thresh;
+            end
+        end
+    else
+        best_thresh = thresh;
+    end
+
+    detect_anomaly = (abs(detect_anomaly) > best_thresh*max_det_anom);
+
+    tp = nnz(anomaly.*detect_anomaly.*M);
+    tn = nnz((~anomaly).*(~detect_anomaly).*M);
+    fp = nnz((~anomaly).*detect_anomaly.*M);
+    fn = nnz(anomaly.*(~detect_anomaly).*M);
+
+    precision = nnz(anomaly.*detect_anomaly.*M)/nnz((detect_anomaly~=0).*M);
+    recall    = nnz(anomaly.*detect_anomaly.*M)/nnz((anomaly~=0).*M);
+    jaccard   = nnz(anomaly.*detect_anomaly.*M)/nnz(((anomaly~=0)|(detect_anomaly~=0)).*M);
+    f1score   = 2 * precision * recall / (precision + recall);
+
+    % fprintf('err=%f\n', error_a);
+    fprintf('thresh=%f\n', best_thresh);
+    fprintf('tp=%f, tn=%f, fp=%f, fn=%f\n', tp, tn, fp, fn);
+    fprintf('prec=%f, recall=%f, f1=%f, jaccard=%f\n', precision, recall, f1score, jaccard);
 
 
     missing = data(~M);
@@ -586,13 +1123,13 @@ end
 %% map_matrix: swap row and columns according to "mapping"
 %% @input mapping: 
 %%    a vector to map venues to the other
-%%    e.g. [4, 3, 1, 2] means mapping 1->4, 2->3, 3->1, 4->2
+%%    e.g. [4, 3, 1, 2] means mapping 4->1, 3->2, 1->3, 2->4
 %%
 function [new_mat] = map_matrix(mat, mapping_rows, mapping_cols)
     new_mat = zeros(size(mat));
-    new_mat(mapping_rows, :) = mat;
+    new_mat = mat(mapping_rows, :);
     tmp = new_mat;
-    new_mat(:, mapping_cols) = tmp;
+    new_mat = tmp(:, mapping_cols);
 end
 
 
