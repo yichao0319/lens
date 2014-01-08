@@ -64,7 +64,7 @@ my $INPUT_TIME_BIN = 1;
 my $input_dir  = "../data/huawei_cellular";
 my $output_dir = "../processed_data/subtask_parse_huawei_3g/region_tm";
 
-my $all_traffic_file = "TM_all_traffic.txt";
+my $all_traffic_file = "TM_all_traffic.txt.bz2";
 my $ul_traffic_file  = "TM_UL_traffic_RNC2304.txt";
 my $bs_loc_file      = "bs_location.txt";
 
