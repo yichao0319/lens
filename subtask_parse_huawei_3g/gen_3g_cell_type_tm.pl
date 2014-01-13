@@ -16,11 +16,19 @@
 ##      a) cell
 ##      b) bs
 ##      c) rnc
+##      d) all
+##      e) load: the top loaded BS
+##      f) stable: the most stable BS
+##   4. num_bs (optional)
+##      number of BS to select when group_type is "load" or "stable"
 ##
 ## - output:
 ##
 ## - e.g.
 ##   perl gen_3g_cell_type_tm.pl all 10 bs
+##   perl gen_3g_cell_type_tm.pl all 10 all
+##   perl gen_3g_cell_type_tm.pl all 10 load 200
+##   perl gen_3g_cell_type_tm.pl all 10 stable 200
 ##
 ##########################################
 
@@ -61,6 +69,7 @@ my $bs_file          = "RNC_BS_Cell_Lon_Lat_Type.txt";
 my $traffic_type;
 my $time_bin;
 my $group_type;
+my $num_bs = 0;
 
 my %traffic_info;
 my %sub_traffic_info;
@@ -76,15 +85,20 @@ my $time_bin_size;
 #############
 # check input
 #############
-if(@ARGV != 3) {
+if(@ARGV < 3 or @ARGV > 4) {
     print "wrong number of input: ".@ARGV."\n";
     exit;
 }
 $traffic_type = $ARGV[0];
 $time_bin     = $ARGV[1] + 0;
 $group_type   = $ARGV[2];
+$num_bs       = $ARGV[3] + 0 if(@ARGV == 4);
 
 $time_bin_size = $time_bin / $INPUT_TIME_BIN;
+
+if(($group_type eq "load" or $group_type eq "stable") and $num_bs <= 0) {
+    die "group type = $group_type, but # BS = $num_bs\n";
+}
 
 
 #############
@@ -154,39 +168,179 @@ foreach my $bs_type (sort {$a <=> $b} (keys %has_bs_type)) {
     print "#Cell=".scalar(keys %{ $has_cell{BS_TYPE}{$bs_type} }).", ";
     print "#BS=".scalar(keys %{ $has_bs{BS_TYPE}{$bs_type} }).", ";
     print "#RNC=".scalar(keys %{ $has_rnc{BS_TYPE}{$bs_type} })."\n";
+
+    # print "  ".join(",", (sort (keys %{ $has_bs{BS_TYPE}{$bs_type} })))."\n";
 }
+# exit;
 
 
-#############
-## for each BS type, generate a TM
-#############
-print "for each BS type, generate a TM\n" if($DEBUG2);
 
-foreach my $bs_type (sort {$a <=> $b} (keys %has_bs_type)) {
-    print "  BS type '$bs_type'\n" if($DEBUG2);
+if (($group_type eq "cell") or ($group_type eq "bs") or ($group_type eq "rnc")) {
+    #############
+    ## for each BS type, generate a TM
+    #############
+    print "for each BS type, generate a TM\n" if($DEBUG2);
+
+    foreach my $bs_type (sort {$a <=> $b} (keys %has_bs_type)) {
+        print "  BS type '$bs_type'\n" if($DEBUG2);
+
+
+        #############
+        ## group traffic by network hierarchy
+        #############
+        print "    group traffic by network hierarchy\n" if($DEBUG2);
+        my %group_traffic_info = group_traffic($group_type, $num_values, \%{ $sub_traffic_info{BS_TYPE}{$bs_type} }, \%bs_info);
+
+
+        #############
+        ## convert to TM
+        #############
+        print "    convert to TM\n" if($DEBUG2);
+        my %tm = gen_tm($time_bin_size, $num_values, \%group_traffic_info);
+        
+
+        #############
+        ## write TM
+        #############
+        print "    write TM\n" if($DEBUG2);
+        write_tm("$output_dir/tm_3g.cell.$group_type.bs$bs_type.$traffic_type.bin$time_bin.txt", \%tm);
+        
+    }
+}
+elsif($group_type eq "all") {
+    print "generate a TM for all BS\n" if($DEBUG2);
+
+    #############
+    ## group traffic by network hierarchy
+    #############
+    print "  group traffic by network hierarchy\n" if($DEBUG2);
+    my %group_traffic_info = group_traffic("bs", $num_values, \%traffic_info, \%bs_info);
+
+
+    #############
+    ## convert to TM
+    #############
+    print "  convert to TM\n" if($DEBUG2);
+    my %tm = gen_tm($time_bin_size, $num_values, \%group_traffic_info);
+    
+
+    #############
+    ## write TM
+    #############
+    print "  write TM\n" if($DEBUG2);
+    write_tm("$output_dir/tm_3g.cell.$group_type.$traffic_type.bin$time_bin.txt", \%tm);
+}
+elsif($group_type eq "load") {
+    print "generate a TM for top loaded BS\n" if($DEBUG2);
 
 
     #############
     ## group traffic by network hierarchy
     #############
-    print "    group traffic by network hierarchy\n" if($DEBUG2);
-    my %group_traffic_info = group_traffic($group_type, $num_values, \%{ $sub_traffic_info{BS_TYPE}{$bs_type} }, \%bs_info);
+    print "  group traffic by network hierarchy\n" if($DEBUG2);
+    my %group_traffic_info = group_traffic("bs", $num_values, \%traffic_info, \%bs_info);
+
+
+    #############
+    ## calculate load
+    #############
+    print "  calculate load\n" if($DEBUG2);
+    my %load_info;
+    foreach my $bs_id (sort {$a <=> $b} (keys %group_traffic_info)) {
+        my @values = @{ $group_traffic_info{$bs_id}{TRAFFIC} };
+        my $load   = 0;
+        foreach my $i (0 .. $num_values-1) {
+            $load += $values[$i];
+        }
+
+        $load_info{LOAD}{$load} = $bs_id;
+    }
+    print "    #BSs = ".scalar(keys %{ $load_info{LOAD} })."\n";
+
+
+    my %top_group_traffic_info;
+    my $cnt = 0;
+    foreach my $load (sort {$b <=> $a} (keys %{ $load_info{LOAD} })) {
+        last if($cnt >= $num_bs);
+        $cnt ++;
+
+        my $bs_id = $load_info{LOAD}{$load};
+
+        @{ $top_group_traffic_info{$bs_id}{TRAFFIC} } = @{ $group_traffic_info{$bs_id}{TRAFFIC} };
+    }
 
 
     #############
     ## convert to TM
     #############
     print "    convert to TM\n" if($DEBUG2);
-    my %tm = gen_tm($time_bin_size, $num_values, \%group_traffic_info);
-
+    my %tm = gen_tm($time_bin_size, $num_values, \%top_group_traffic_info);
+    
 
     #############
     ## write TM
     #############
     print "    write TM\n" if($DEBUG2);
-    write_tm("$output_dir/tm_3g.cell.$group_type.bs$bs_type.$traffic_type.bin$time_bin.txt", \%tm);
+    write_tm("$output_dir/tm_3g.cell.$group_type.top$num_bs.$traffic_type.bin$time_bin.txt", \%tm);
 }
+elsif($group_type eq "stable") {
+    print "generate a TM for the most stable BSs\n" if($DEBUG2);
 
+
+    #############
+    ## group traffic by network hierarchy
+    #############
+    print "  group traffic by network hierarchy\n" if($DEBUG2);
+    my %group_traffic_info = group_traffic("bs", $num_values, \%traffic_info, \%bs_info);
+
+
+    #############
+    ## calculate stdev
+    #############
+    print "  calculate stdev\n" if($DEBUG2);
+    my %stdev_info;
+    foreach my $bs_id (sort {$a <=> $b} (keys %group_traffic_info)) {
+        my @values = @{ $group_traffic_info{$bs_id}{TRAFFIC} };
+        my $max = max(@values);
+        
+        foreach my $i (0 .. $num_values-1) {
+            $values[$i] /= $max;
+        }
+
+        my $std = MyUtil::stdev(\@values);
+        $stdev_info{STD}{$std} = $bs_id;
+    }
+    print "    #BSs = ".scalar(keys %{ $stdev_info{STD} })."\n";
+
+
+    my %top_group_traffic_info;
+    my $cnt = 0;
+    foreach my $std (sort {$a <=> $b} (keys %{ $stdev_info{STD} })) {
+        last if($cnt >= $num_bs);
+        $cnt ++;
+
+        my $bs_id = $stdev_info{STD}{$std};
+
+        @{ $top_group_traffic_info{$bs_id}{TRAFFIC} } = @{ $group_traffic_info{$bs_id}{TRAFFIC} };
+    }
+
+
+    #############
+    ## convert to TM
+    #############
+    print "    convert to TM\n" if($DEBUG2);
+    my %tm = gen_tm($time_bin_size, $num_values, \%top_group_traffic_info);
+    
+
+    #############
+    ## write TM
+    #############
+    print "    write TM\n" if($DEBUG2);
+    write_tm("$output_dir/tm_3g.cell.$group_type.top$num_bs.$traffic_type.bin$time_bin.txt", \%tm);
+}
+else {
+    die "wrong group type: $group_type"
+}
 
 
 
