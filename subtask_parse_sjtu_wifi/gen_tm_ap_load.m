@@ -3,17 +3,17 @@
 %% 2014.01.05 @ UT Austin
 %%
 %% - Input:
-%%
+%%   top
 %%
 %% - Output:
 %%
 %%
 %% e.g.
-%%
+%%   gen_tm_ap_load(50)
 %%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function gen_tm_ap_load()
+function gen_tm_ap_load(sel_ap)
     addpath('../utils');
 
     %% --------------------
@@ -39,11 +39,18 @@ function gen_tm_ap_load()
     %% --------------------
     %% Check input
     %% --------------------
+    if nargin < 1, sel_ap = 250; end
 
 
     %% --------------------
     %% Main starts
     %% --------------------
+
+    %% --------------------
+    %% Read 3D TM
+    %% --------------------
+    fprintf('Read 3G TM\n');
+
     data_ul = zeros(num_ap, nf);
     data_dl = zeros(num_ap, nf);
     for f = 1:nf
@@ -62,7 +69,23 @@ function gen_tm_ap_load()
         data_dl(:, f) = tmp;
     end
 
-    dlmwrite([output_dir 'tm_upload.sjtu_wifi.ap_load.600.txt'], data_ul', 'delimiter', '\t');
-    dlmwrite([output_dir 'tm_download.sjtu_wifi.ap_load.600.txt'], data_dl', 'delimiter', '\t');
+
+    %% --------------------
+    %% sort 
+    %% --------------------
+    fprintf('Sort\n');
+
+    data_all = data_ul + data_dl;
+    sum_data = sum(data_all, 2);
+    [sorted, ix] = sort(sum_data, 'descend');
+
+    sel_data_all = data_all(ix(1:sel_ap), :);
+    sel_data_ul  = data_ul(ix(1:sel_ap), :);
+    sel_data_dl  = data_dl(ix(1:sel_ap), :);
+
+    
+    dlmwrite([output_dir 'tm_sjtu_wifi.ap_load.all.bin600.top' int2str(sel_ap) '.txt'], sel_data_all', 'delimiter', '\t');
+    dlmwrite([output_dir 'tm_sjtu_wifi.ap_load.ul.bin600.top' int2str(sel_ap) '.txt'], sel_data_ul', 'delimiter', '\t');
+    dlmwrite([output_dir 'tm_sjtu_wifi.ap_load.dl.bin600.top' int2str(sel_ap) '.txt'], sel_data_dl', 'delimiter', '\t');
 
 end
