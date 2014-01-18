@@ -18,8 +18,10 @@ steps:
 
 9. gen_tm_ap_load.m
      read 3D TM output above and convert to 2D TM by only considering the traffic load of APs.
+10. gen_tm_ap_load.pl
+     Generate 2D TM as above, but from summarized text file directly.
 
-10. ap_topology.pl
+11. ap_topology.pl
      try to group APs by it's topology.
      it's not complete yet because cannot find the map between AP IP and the topology figure.
 

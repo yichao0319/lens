@@ -205,6 +205,61 @@ sub read_account_info {
 }
 
 
+sub read_account_info2 {
+    my ($full_path) = @_;
+
+    my $DEBUG0 = 0;
+    my $DEBUG1 = 1;
+
+    my %account_info = ();
+
+    print "Read RADIUS account data: $full_path\n" if($DEBUG0);
+
+    #############
+    ## parse the account file
+    #############
+    open FH, "bzcat \"$full_path\" |" or die $!;
+    while(<FH>) {
+        chomp;
+        print "- ".$_."\n" if($DEBUG0);
+
+        my @ret = split(/,/, $_);
+        my $user_ip  = $ret[15-1]; ## Framed-IP-Address ; Login-IP-Host??
+        my $user_mac = $ret[5-1];  ## Calling-Station-Id
+        my $ap_ip    = $ret[17-1]; ## NAS-IP-Address
+        my $ap_mac   = $ret[19-1]; ## Called-Station-Id
+        # my $download = $ret[12-1]; ## Acct-Output-Octets
+        # my $upload   = $ret[11-1]; ## Acct-Input-Octets 
+
+        $user_mac =~ s{-}{:}g;
+        $user_mac =~ s{\r}{}g;
+        $ap_mac =~ s{-}{:}g;
+        $ap_mac =~ s{\r}{}g;
+        next unless($user_ip =~ /\d+\.\d+\.\d+\.\d+/);
+
+        $account_info{USER_IP}{$user_ip}{USER_MAC} = $user_mac;
+        $account_info{USER_IP}{$user_ip}{AP_IP}    = $ap_ip;
+        $account_info{USER_IP}{$user_ip}{AP_MAC}   = $ap_mac;
+        # $account_info{USER_IP}{$user_ip}{AP_NAME}  = $ap_info{AP_MAC}{$ap_mac}{AP_NAME};
+
+        if($DEBUG0) {
+            print "user ip : \"$user_ip\"\n";
+            print "user mac: \"$user_mac\"\n";
+            print "ap ip   : \"$ap_ip\"\n";
+            print "ap mac  : \"$ap_mac\"\n";
+            # print "ap_name : \"".$account_info{USER_IP}{$user_ip}{AP_NAME}."\"\n\n";
+            # print "download: $download\n";
+            # print "upload  : $upload\n\n";
+        }
+    }
+    close FH;
+
+
+    return %account_info;
+}
+
+
+
 #############
 ## Read AP location
 #############
