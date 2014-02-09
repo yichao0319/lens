@@ -47,11 +47,11 @@ my $output_dir = "";
 #############
 
 my @seeds = (1 .. 5);
-my @opt_types = ("lens", "srmf", "lens_knn", "srmf_knn", "lens_knn2");
+my @opt_types = ("srmf_knn", "lens_knn2", "srmf_lens_knn2", "lens_st_knn2", "srmf_lens_st_knn", "srmf", "lens", "lens_st", "base", "svd", "svd_base", "svd_base_knn", "nmf", "knn");
 
 foreach my $type (@opt_types) {
    foreach my $seed (@seeds) {
-      my $cmd = "rm tmp*$type*seed$seed.sh";
+      my $cmd = "rm tmp*.$type.*seed$seed.sh";
       print $cmd."\n";
       `$cmd`;
 
