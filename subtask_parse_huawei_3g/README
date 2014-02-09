@@ -9,5 +9,5 @@
    group_ip_by_cell.pl
 
 4. Generate TM on Cell and it's type
-   gen_3g_geo_tm.pl
+   gen_3g_cell_type_tm.pl
 

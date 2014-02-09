@@ -175,7 +175,7 @@ foreach my $bs_type (sort {$a <=> $b} (keys %has_bs_type)) {
 
 
 
-if (($group_type eq "cell") or ($group_type eq "bs") or ($group_type eq "rnc")) {
+if (($group_type eq "cell") or ($group_type eq "bs")) {
     #############
     ## for each BS type, generate a TM
     #############
@@ -206,6 +206,29 @@ if (($group_type eq "cell") or ($group_type eq "bs") or ($group_type eq "rnc")) 
         write_tm("$output_dir/tm_3g.cell.$group_type.bs$bs_type.$traffic_type.bin$time_bin.txt", \%tm);
         
     }
+}
+elsif($group_type eq "rnc") {
+    print "generate TM for RNC\n" if($DEBUG2);
+
+    #############
+    ## group traffic by network hierarchy
+    #############
+    print "  group traffic by network hierarchy\n" if($DEBUG2);
+    my %group_traffic_info = group_traffic("rnc", $num_values, \%traffic_info, \%bs_info);
+
+
+    #############
+    ## convert to TM
+    #############
+    print "  convert to TM\n" if($DEBUG2);
+    my %tm = gen_tm($time_bin_size, $num_values, \%group_traffic_info);
+    
+
+    #############
+    ## write TM
+    #############
+    print "  write TM\n" if($DEBUG2);
+    write_tm("$output_dir/tm_3g.cell.$group_type.$traffic_type.bin$time_bin.txt", \%tm);
 }
 elsif($group_type eq "all") {
     print "generate a TM for all BS\n" if($DEBUG2);
