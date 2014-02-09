@@ -13,7 +13,7 @@
 ## - output:
 ##
 ## - e.g.
-##   perl gen_tm_ap_load.pl 600
+##   perl gen_tm_ap_load.pl 600 100
 ##
 ##########################################
 
