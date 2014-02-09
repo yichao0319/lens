@@ -6,18 +6,9 @@
 %%
 %%
 %% - Output:
-%%
-%%
-%% e.g.
-%%   [sigma] = analyze_low_rank_2d('../processed_data/subtask_parse_totem/tm/', 'tm_totem.', 100, 23, 23, 0.01);
-%%   [sigma] = analyze_low_rank_2d('../condor_data/abilene/', 'X', 100, 121, 1, 0.01);
-%%   [sigma] = analyze_low_rank_2d('../condor_data/subtask_parse_huawei_3g/region_tm/', 'tm_3g_region_all.res0.006.bin10.sub.', 100, 21, 26, 0.01);
-%%   [sigma] = analyze_low_rank_2d('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_upload.sjtu_wifi.ap_load.600.txt', 100, 250, 1, 0.01);
-%%   [sigma] = analyze_low_rank_2d('../processed_data/subtask_parse_sjtu_wifi/tm/', 'tm_download.sjtu_wifi.ap_load.600.txt', 100, 250, 1, 0.01);
-%%   [sigma] = analyze_low_rank_2d('../processed_data/subtask_parse_huawei_3g/bs_tm/', 'tm_3g.cell.bs.bs1.all.bin10.txt', 100, 458, 1, 0.01);
 %%     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width, height, thresh)
+function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width, height, thresh, num_anomaly, sigma_mag)
     addpath('../utils/mirt_dctn');
     addpath('../utils');
 
@@ -47,21 +38,7 @@ function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width
     %% --------------------
     if DEBUG2, fprintf('read data matrix\n'); end
 
-    if strcmpi(filename, 'X') | ...
-       strcmpi(filename, 'tm_upload.sjtu_wifi.ap_load.600.txt') | ...
-       strcmpi(filename, 'tm_download.sjtu_wifi.ap_load.600.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs0.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs1.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs2.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs3.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs4.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs5.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs6.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs7.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs8.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs9.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs10.all.bin10.txt') | ...
-       strcmpi(filename, 'tm_3g.cell.bs.bs11.all.bin10.txt')
+    if strcmpi(filename, 'X') | strfind(filename, '.txt')
         %% load data matrix
         data = zeros(height, width, num_frames);
 
@@ -95,14 +72,40 @@ function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width
     
     orig_sx = size(data);
     data = reshape(data, orig_sx(1) * orig_sx(2), orig_sx(3));
+    full_rank = min(size(data));
+
+
+    %% --------------------
+    %% Add anomalies
+    %% --------------------
+    if DEBUG2, fprintf('Add anomalies\n'); end
+
+    % num_anomaly = 0.05;
+    % sigma_mag = 0.4;
+
+    [n, m] = size(data);
+    ny = floor(n*m*num_anomaly);
+
+    Y = zeros(n, m);
+
+    if sigma_mag > 1
+        anomaly_base = std(data(:));
+        Y(randsample(n*m, ny)) = anomaly_base * sign(randn(ny, 1)) .* (sigma_mag + sign(randn(ny, 1)) * 1);
+    else
+        Y(randsample(n*m, ny)) = sign(randn(ny, 1)) * max(data(:)) * sigma_mag;
+    end
+
+    data2 = max(0, data + Y);
+    data2 = data2 - mean(data2(:));  %% mean centered
+    
     
 
     %% --------------------
-    %% calculate the rank
+    %% calculate the rank for data with anomalies
     %% --------------------
-    if DEBUG2, fprintf('calculate the rank\n'); end
+    if DEBUG2, fprintf('calculate the rank for data with anomalies\n'); end
 
-    m = data;
+    m = data2;
     m = m - mean(m(:));
     sigma = svd(m);
 
@@ -110,6 +113,8 @@ function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width
     total_sum_sofar = cumsum(sigma);
     cdf = total_sum_sofar ./ total_sum;
 
+    k = [1:length(cdf)]' / full_rank;
+    
     %% change point
     inv_singular = [1; 1 - cdf];
     ix = find(inv_singular < thresh);
@@ -119,16 +124,13 @@ function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width
         r = length(sigma);
     end
 
-    output_file = [output_dir filename '.rank.txt'];
+    output_file = [output_dir filename '.na' num2str(num_anomaly) '.anom' num2str(sigma_mag) '.rank.txt'];
     dlmwrite(output_file, inv_singular, 'delimiter', '\t');
 
-    fprintf('rand = %d\n', r);
+    output_file = [output_dir filename '.na' num2str(num_anomaly) '.anom' num2str(sigma_mag) '.cdf.txt'];
+    dlmwrite(output_file, [k, cdf], 'delimiter', '\t');
 
-
-    %% --------------------
-    %% remove the top-rank nodes
-    %% --------------------
-    if DEBUG2, fprintf('remove the top-loaded nodes\n'); end
+    fprintf('rand = %d, full_rank = %d\n', r, full_rank);
 
     
     
