@@ -35,6 +35,7 @@ tmp*
 *.mine
 *.org
 *.bk
+backup*
 
 #####
 ## condor, cvs

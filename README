@@ -69,7 +69,7 @@
      column: 26 columns, first two are gps values, next 24 columns represent 24 one-hour traffic(in bytes).
 
 5. Traffic Matrix
-   
+
     - MAWI
         1. processed_data/subtask_parse_mawi/tm/tm_mawi.sort_ips.top100.txt.86400.
             25 frames
@@ -105,18 +105,34 @@
             19 frames
             400 * 250
         
-        4. processed_data/subtask_parse_sjtu_wifi/tm/tm_upload.sjtu_wifi.ap_load.600.txt
-            114 (time) * 250 (APs)
-           processed_data/subtask_parse_sjtu_wifi/tm/tm_download.sjtu_wifi.ap_load.600.txt
-            114 (time) * 250 (APs)
+        4. Group by NUM top loaded APs
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_sjtu_wifi.ap_load.all.bin600.top50.txt  
+            114 (time) * 50 (APs)
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_sjtu_wifi.ap_load.dl.bin600.top50.txt  
+            114 (time) * 50 (APs)
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_sjtu_wifi.ap_load.ul.bin600.top50.txt
+            114 (time) * 50 (APs)
+
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_sjtu_wifi2.ap_load.all.bin600.top100.txt
+            287 (time) * 100 (APs)
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_sjtu_wifi2.ap_load.dl.bin600.top100.txt
+            287 (time) * 100 (APs)
+           processed_data/subtask_parse_sjtu_wifi/tm/tm_sjtu_wifi2.ap_load.ul.bin600.top100.txt
+            287 (time) * 100 (APs)
+
+            
 
 
     - Huawei 3G
-        1. processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.006.bin10.sub.
+        1. Group by lat,lng of BS
+
+           processed_data/subtask_parse_huawei_3g/region_tm/tm_3g_region_all.res0.006.bin10.sub.
             146 frames
             26 * 21
 
-        2. processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs0.all.bin10.txt
+        2. Group by BS at different areas:
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs0.all.bin10.txt
             group by BS
             BS types: unknown
             1074 * 145
@@ -135,6 +151,11 @@
             group by BS
             BS types: general urban area
             472 * 145
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs3.all.bin60.txt
+            group by BS
+            BS types: general urban area
+            472 * 24
 
            processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.bs.bs4.all.bin10.txt
             group by BS
@@ -176,15 +197,77 @@
             BS types: general urban area
             13 * 145
 
-    - Totem
+        3. group by BS (all BSs)
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.all.all.bin10.txt
+            2469 * 145
+
+        4. group by BS (all BSs) and choose the top loaded BSs
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.load.top200.all.bin10.txt
+            200 * 145
+
+        5. group by BS (all BSs) and choose the most stable BSs
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.stable.top200.all.bin10.txt
+            200 * 145
+
+        6. group by RNC
+
+           processed_data/subtask_parse_huawei_3g/bs_tm/tm_3g.cell.rnc.all.bin10.txt
+            13 * 145
+
+    - GEANT (Totem)
         1. processed_data/subtask_parse_totem/tm/tm_totem.
             10772 frames
             23 * 23
+            time bin = 15 minutes
 
     - Abilene
         1. data/abilene/X
             1008 (time) * 121 (od pairs)
+            time bin = 10 minutes
 
+        2. processed_data/subtask_parse_abilene/tm/tm_abilene.od.
+            same as above, but in 3D version
+            1008 frames
+            11 * 11
+            time bin = 10 minutes
+
+    - CSI
+        1. Static
+            /v/filer4b/v27q002/ut-wireless/swati/processed_traces/MonitorExp1/128.83.158.127_file.dat0_matrix.mat.txt
+             9850 * 90
+
+            /v/filer4b/v27q002/ut-wireless/swati/processed_traces/MonitorExp1/128.83.158.50_file.dat0_matrix.mat.txt
+             9706 * 90
+
+        2. Mobile
+            data/csi/mobile/Mob-Recv1run1.dat0_matrix.mat_dB.txt
+             10000 * 90
+
+            data/csi/mobile/Mob-Recv1run1.dat1_matrix.mat_dB.txt
+             10000 * 90
+
+    - Sensor
+        1. IntelLab
+            processed_data/subtask_parse_sensor/tm/tm_sensor.temp.bin600.txt
+            processed_data/subtask_parse_sensor/tm/tm_sensor.humidity.bin600.txt
+            processed_data/subtask_parse_sensor/tm/tm_sensor.light.bin600.txt
+            processed_data/subtask_parse_sensor/tm/tm_sensor.voltage.bin600.txt
+            4943 * 54
+
+    - RON
+        processed_data/subtask_parse_ron/tm/tm_ron1.latency.
+            12 * 12 * 494
+
+    - RSSI: telos
+        processed_data/subtask_parse_telos_rssi/tm/tm_telos_rssi.txt
+            10000 * 16
+
+    - RSSI: multi location
+        processed_data/subtask_parse_multi_loc_rssi/tm/tm_multi_loc_rssi.txt
+            500 * 895 (179 nodes * 5 monitors)
 
 
 /*************************
