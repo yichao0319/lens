@@ -44,4 +44,8 @@ condor_data
 condor_data_roadkill
 cvs_repository
 
-
+#####
+## don't track
+#####
+utils/lens
+c
