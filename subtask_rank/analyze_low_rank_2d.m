@@ -88,15 +88,19 @@ function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width
 
     Y = zeros(n, m);
 
-    if sigma_mag > 1
-        anomaly_base = std(data(:));
-        Y(randsample(n*m, ny)) = anomaly_base * sign(randn(ny, 1)) .* (sigma_mag + sign(randn(ny, 1)) * 1);
-    else
-        Y(randsample(n*m, ny)) = sign(randn(ny, 1)) * max(data(:)) * sigma_mag;
-    end
+    % if sigma_mag > 1
+    %     anomaly_base = std(data(:));
+    %     Y(randsample(n*m, ny)) = anomaly_base * sign(randn(ny, 1)) .* (sigma_mag + sign(randn(ny, 1)) * 1);
+    % else
+    %     Y(randsample(n*m, ny)) = sign(randn(ny, 1)) * max(data(:)) * sigma_mag;
+    % end
+    dif = abs(data(:, 1:end-1) - data(:, 2:end));
+    dif = sort(dif(:), 'descend');
+    anomaly_base = mean(mean(dif(1:10)));
+    Y(randsample(n*m, ny)) = anomaly_base * sign(randn(ny, 1)) .* sigma_mag;
 
     data2 = max(0, data + Y);
-    data2 = data2 - mean(data2(:));  %% mean centered
+    % data2 = data2 - mean(data2(:));  %% mean centered
     
     
 
@@ -135,9 +139,5 @@ function [sigma] = analyze_low_rank_2d(input_TM_dir, filename, num_frames, width
     
     
 end
-
-
-
-
 
 
