@@ -261,13 +261,26 @@
         processed_data/subtask_parse_ron/tm/tm_ron1.latency.
             12 * 12 * 494
 
-    - RSSI: telos
+    - Cister RSSI: telos
         processed_data/subtask_parse_telos_rssi/tm/tm_telos_rssi.txt
             10000 * 16
 
-    - RSSI: multi location
+    - CU RSSI: multi location
         processed_data/subtask_parse_multi_loc_rssi/tm/tm_multi_loc_rssi.txt
             500 * 895 (179 nodes * 5 monitors)
+
+    - Channel CSI
+        condor_data/subtask_parse_csi_channel/csi/static_trace13.ant1.mag.txt
+            5000 * 270
+
+    - UCSB Meshnet
+        condor_data/subtask_parse_ucsb_meshnet/tm/tm_ucsb_meshnet.connected.txt
+            1527 * 425
+    
+    - UMich RSS
+        condor_data/subtask_parse_umich_rss/tm/tm_umich_rss.txt
+            3127 * 182
+
 
 
 /*************************
