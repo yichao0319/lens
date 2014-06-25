@@ -98,7 +98,9 @@ while(<FH>) {
     chomp;
 
     my @values = split(/\s+/, $_);
+    shift @values;
     print "  f$f: # OD pairs=".scalar(@values)."\n" if($DEBUG0);
+    print "       ".join(",", @values)."\n" if($DEBUG0);
 
     my %tm;
 
@@ -112,21 +114,27 @@ while(<FH>) {
     #############
     ## write a snapshot to file
     #############
+    print "write a snapshot to file\n" if($DEBUG0);
+
     open FH_OUT, "> $output_dir/tm_abilene.od.$f.txt" or die $!;
     foreach my $ni (sort {$a cmp $b} (keys %{ $od_info{NODE} })) {
         foreach my $nj (sort {$a cmp $b} (keys %{ $od_info{NODE} })) {
             if(exists $tm{$ni}{$nj}) {
                 print FH_OUT "$tm{$ni}{$nj}\t";
+                # print "$tm{$ni}{$nj}\t";
             }
             else {
                 print FH_OUT "0\t";
+                # print "0\t";
             }
         }
         print FH_OUT "\n";
+        # print "\n";
     }
     close FH_OUT;
 
     $f ++;
+    # exit;
 }
 close FH;
 
