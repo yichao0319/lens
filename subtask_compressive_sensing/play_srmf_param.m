@@ -76,16 +76,40 @@
 % nw = 12;
 % nh = 12;
 % nf = 494;
+% r = 12;
+% file_path = '../processed_data/subtask_parse_telos_rssi/tm/';
+% filename = 'tm_telos_rssi.txt';
+% nw = 16;
+% nh = 1;
+% nf = 1000;
 % r = 8;
-file_path = '../processed_data/subtask_parse_telos_rssi/tm/';
-filename = 'tm_telos_rssi.txt';
-nw = 16;
-nh = 1;
-nf = 1000;
-r = 8;
 % file_path = '../processed_data/subtask_parse_multi_loc_rssi/tm/';
 % filename = 'tm_multi_loc_rssi.txt';
 % nw = 895;
+% nh = 1;
+% nf = 500;
+% r = 16;
+% file_path = '../processed_data/subtask_parse_ucsb_meshnet/tm/';
+% filename = 'tm_ucsb_meshnet.connected.txt';
+% nw = 425;
+% nh = 1;
+% nf = 1000;
+% r = 32;
+file_path = '../processed_data/subtask_parse_ucsb_meshnet/tm/';
+filename = 'tm_ucsb_meshnet.';
+nw = 38;
+nh = 38;
+nf = 1000;
+r = 16;
+% file_path = '../processed_data/subtask_parse_umich_rss/tm/';
+% filename = 'tm_umich_rss.txt';
+% nw = 182;
+% nh = 1;
+% nf = 1000;
+% r = 32;
+% file_path = '../processed_data/subtask_parse_csi_channel/csi/';
+% filename = 'static_trace13.ant1.mag.txt';
+% nw = 270;
 % nh = 1;
 % nf = 500;
 % r = 32;
@@ -95,7 +119,7 @@ filename
 
 period = 1;
 num_anomaly = 0.05;
-anomaly_size = 0.4;
+anomaly_size = 0;
 loss_rate = 0.4;
 
 
