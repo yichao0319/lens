@@ -105,7 +105,7 @@ my $burst_size;
 # @files = ("tm_telos_rssi.txt");
 # @files = ("tm_multi_loc_rssi.txt");
 
-@files = ("tm_abilene.od.", "tm_totem.", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_ron1.latency.", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt");
+@files = ("tm_abilene.od.", "tm_totem.", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_ron1.latency.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "static_trace13.ant1.mag.txt", "tm_ucsb_meshnet.connected.txt", "tm_umich_rss.txt");
 
 
 @seeds = (1 .. 1);
@@ -113,13 +113,13 @@ my $burst_size;
 # "srmf_knn" "lens_knn2" "srmf_lens_knn2" "lens_st_knn2" "srmf_lens_st_knn" "srmf" "lens" "lens_st" "knn"
 # @opt_types = ("srmf", "srmf_knn", "lens", "lens_knn2", "srmf_lens_knn2", "lens_st", "lens_st_knn2", "srmf_lens_st_knn");
 # @opt_types = ("srmf", "srmf_knn", "lens", "lens_st", "lens_st_knn2", "srmf_lens_st_knn", "base", "svd", "svd_base", "svd_base_knn", "nmf");
-@opt_types = ("base", "srmf", "srmf_lens_st_knn");
+@opt_types = ("base", "srmf", "lens3");
 @opt_dims = ("2d");
 
 @num_anomalies = (0.05);
-@sigma_mags = (0.4);
+@sigma_mags = (1);
 @sigma_noises = (0);
-@threshs = (0);
+@threshs = (-1);
 
 $drop_ele_mode = "elem";
 $drop_mode = "half";
@@ -137,7 +137,7 @@ for my $file_name (@files) {
         $height = 1;
 
         @group_sizes = (100);
-        @ranks = (8);
+        @ranks = (32);
         @periods = (1);
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.wifi";
@@ -183,9 +183,8 @@ for my $file_name (@files) {
         $width = 472;
         $height = 1;
 
-        # @group_sizes = (100);
         @group_sizes = (144);
-        @ranks = (64);
+        @ranks = (32);
         @periods = (1);
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
@@ -246,7 +245,7 @@ for my $file_name (@files) {
 
         # @group_sizes = (100);
         @group_sizes = (672);
-        @ranks = (8);
+        @ranks = (64);
         @periods = (1);
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.geant";
@@ -259,7 +258,7 @@ for my $file_name (@files) {
     #     $height = 1;
 
     #     @group_sizes = (1008);
-    #     @ranks = (8);
+    #     @ranks = (32);
     #     @periods = (1);
 
     #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.abilene";
@@ -272,7 +271,7 @@ for my $file_name (@files) {
 
         # @group_sizes = (100);
         @group_sizes = (1008);
-        @ranks = (8);
+        @ranks = (64);
         @periods = (1);
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.abilene";
@@ -307,7 +306,7 @@ for my $file_name (@files) {
         $height = 1;
 
         @group_sizes = (1000);
-        @ranks = (32);
+        @ranks = (64);
         @periods = (1);
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.csi";
@@ -385,7 +384,7 @@ for my $file_name (@files) {
         $height = 12;
 
         @group_sizes = (494);
-        @ranks = (8);
+        @ranks = (32);
         @periods = (1);
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.ron";
@@ -393,12 +392,12 @@ for my $file_name (@files) {
     #############
     ## RSSI - telos
     elsif($file_name eq "tm_telos_rssi.txt") {
-        $num_frames = 1000;
+        $num_frames = 500;
         $width = 16;
         $height = 1;
 
-        @group_sizes = (1000);
-        @ranks = (8);
+        @group_sizes = (500);
+        @ranks = (12);
         @periods = (1);
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.telos";
@@ -416,12 +415,51 @@ for my $file_name (@files) {
 
         $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.multi";
     }
+    #############
+    ## Channel CSI
+    elsif($file_name eq "static_trace13.ant1.mag.txt") {
+        $num_frames = 500;
+        $width = 270;
+        $height = 1;
+
+        @group_sizes = (500);
+        @ranks = (64);
+        @periods = (1);
+
+        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
+    #############
+    ## UCSB Meshnet
+    elsif($file_name eq "tm_ucsb_meshnet.connected.txt") {
+        $num_frames = 1000;
+        $width = 425;
+        $height = 1;
+
+        @group_sizes = (1000);
+        @ranks = (64);
+        @periods = (1);
+
+        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
+    #############
+    ## UMich RSS
+    elsif($file_name eq "tm_umich_rss.txt") {
+        $num_frames = 1000;
+        $width = 182;
+        $height = 1;
+
+        @group_sizes = (1000);
+        @ranks = (64);
+        @periods = (1);
+
+        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
     else {
         die "no such file: $file_name\n";
     }
 
-    $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
-    # $input_dir  = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/output";
+    # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    $input_dir  = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/output";
 
 
     for my $group_size (@group_sizes) {
@@ -469,7 +507,7 @@ sub plot_prediction {
 
     my @opt_types = @$opt_types_ref;
     # my @loss_rates = (0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.93, 0.95, 0.97, 0.98, 0.99);
-    my @loss_rates = (0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95);
+    my @loss_rates = (0.01, 0.02, 0.04, 0.08, 0.16, 0.2, 0.25);
 
     
     my $output_file = "Prediction.$func.$file_name.$num_frames.$width.$height.$group_size.r$rank.period$period.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.burst$burst_size.na$num_anomaly.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
@@ -479,6 +517,8 @@ sub plot_prediction {
 
     foreach my $lri (0 .. @loss_rates-1) {
         my $loss_rate = $loss_rates[$lri];
+
+        last if($loss_rate > 0.2);
 
         print FH1 $loss_rate;
 
@@ -551,7 +591,7 @@ sub plot_prediction {
 
     ## plot filling in results
     my $y_max = get_y_max("Prediction", $file_name);
-    my $cmd = "sed 's/FILE_NAME/pred.$output_file/g; s/FIG_NAME/pred.$output_file/g; s/X_RANGE_S/0/g; s/X_RANGE_E//g; s/Y_RANGE_E/$y_max/g; s/X_LABEL/Prediction Length/g; s/Y_LABEL/NMAE/g; ' plot.pred2.mother.plot > tmp.plot.pred.plot";
+    my $cmd = "sed 's/FILE_NAME/pred.$output_file/g; s/FIG_NAME/pred.$output_file/g; s/X_RANGE_S/0/g; s/X_RANGE_E//g; s/Y_RANGE_E//g; s/X_LABEL/Prediction Length/g; s/Y_LABEL/NMAE/g; ' plot.pred2.mother.plot > tmp.plot.pred.plot";
     `$cmd`;
 
     open FH, ">>tmp.plot.pred.plot" or die $!;

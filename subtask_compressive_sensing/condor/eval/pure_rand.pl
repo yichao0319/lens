@@ -106,31 +106,27 @@ my $burst_size;
 # @files = ("tm_telos_rssi.txt");
 # @files = ("tm_multi_loc_rssi.txt");
 
-@files = ("tm_abilene.od.", "tm_totem.", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_ron1.latency.", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt");
+@files = ("tm_abilene.od.", "tm_totem.", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_ron1.latency.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "static_trace13.ant1.mag.txt", "tm_ucsb_meshnet.connected.txt", "tm_umich_rss.txt");
 
 
 @seeds = (1 .. 1);
-# "srmf_knn" "lens_knn2" "srmf_lens_knn2" "lens_st_knn2" "srmf_lens_st_knn" "srmf" "lens" "lens_st" "knn"
-# @opt_types = ("srmf", "srmf_knn", "lens", "lens_knn2", "srmf_lens_knn2", "lens_st", "lens_st_knn2", "srmf_lens_st_knn");
-# @opt_types = ("srmf", "srmf_knn", "lens", "lens_st", "lens_st_knn2", "srmf_lens_st_knn", "base", "svd", "svd_base", "svd_base_knn", "nmf");
-# @opt_types = ("srmf", "srmf_knn", "lens", "lens_st", "lens_st_knn2", "srmf_lens_st_knn", "base", "svd", "svd_base", "svd_base_knn", "nmf");
-@opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens_st", "lens_st_knn2", "srmf_lens_st_knn");
+@opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens3");
 
 
 my $opt_swap_mat = "org";
 my $opt_dim = "2d";
 
 my $num_anomaly = 0.05;
-my $sigma_mag = 0.4;
+my $sigma_mag = 1;
 my $sigma_noise = 0;
-my $thresh = 0;
+my $thresh = -1;
 
 $drop_ele_mode = "elem";
 $drop_mode = "ind";
 $elem_frac = 1;
 $burst_size = 1;
-$input_dir = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
-# $input_dir  = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/output";
+# $input_dir = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+$input_dir  = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/output";
 
 for my $file_name (@files) {    
     print $file_name."\n";
@@ -154,7 +150,7 @@ sub plot_pure_rand {
 
     my @opt_types = @$opt_types_ref;
     # my @loss_rates = (0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.93, 0.95, 0.97, 0.98, 0.99);
-    my @loss_rates = (0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95);
+    my @loss_rates = (0.1, 0.2, 0.4, 0.8, 0.9, 0.95);
 
     
     
@@ -172,50 +168,6 @@ sub plot_pure_rand {
         }
         print "\n";
 
-        ######################################
-
-        # print FH2 $loss_rate;
-
-        # ## prec
-        # foreach my $ti (0 .. @opt_types-1) {
-        #     my $opt_type = $opt_types[$ti];
-
-        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-        #     print FH2 ", ".$rets{METRIC}{8}{AVG};
-        # }
-
-        # ## recall
-        # foreach my $ti (0 .. @opt_types-1) {
-        #     my $opt_type = $opt_types[$ti];
-
-        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-        #     print FH2 ", ".$rets{METRIC}{9}{AVG};
-        # }
-
-        # ## f1
-        # foreach my $ti (0 .. @opt_types-1) {
-        #     my $opt_type = $opt_types[$ti];
-
-        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-        #     print FH2 ", ".$rets{METRIC}{10}{AVG};
-        # }
-
-        # ## jaccard
-        # foreach my $ti (0 .. @opt_types-1) {
-        #     my $opt_type = $opt_types[$ti];
-
-        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-        #     print FH2 ", ".$rets{METRIC}{11}{AVG};
-        # }
-
-        # ## best thresh
-        # foreach my $ti (0 .. @opt_types-1) {
-        #     my $opt_type = $opt_types[$ti];
-
-        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-        #     print FH2 ", ".$rets{METRIC}{12}{AVG};
-        # }
-        # print FH2 "\n";
     }
 }
 
@@ -299,9 +251,13 @@ sub get_trace_property {
         $height = 1;
 
         $group_size = 100;
-        $rank = 8;
         $period = 1;
 
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 32; }
+        $rank = 8;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.wifi";
     }
     ###############
     ## 3G
@@ -312,9 +268,13 @@ sub get_trace_property {
         $height = 1;
 
         $group_size = 144;
-        $rank = 64;
         $period = 1;
 
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 16; }
+        $rank = 32;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
     }
     #############
     ## GEANT
@@ -324,32 +284,33 @@ sub get_trace_property {
         $width = 23;
         $height = 23;
 
+        # $group_size = 100;
         $group_size = 672;
-        $rank = 8;
         $period = 1;
 
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 16; }
+        $rank = 25;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.geant";
     }
     #############
     ## Abilene
-    elsif($file_name eq "X") {
-        $num_frames = 1008;
-        $width = 121;
-        $height = 1;
-
-        $group_size = 1008;
-        $rank = 8;
-        $period = 1;
-
-    }
     elsif($file_name eq "tm_abilene.od.") {
         # $num_frames = 100;
         $num_frames = 1008;
         $width = 11;
         $height = 11;
 
+        # $group_size = 100;
         $group_size = 1008;
-        $rank = 8;
         $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 64; }
+        $rank = 20;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.abilene";
     }
     #############
     ## CSI
@@ -359,9 +320,13 @@ sub get_trace_property {
         $height = 1;
 
         $group_size = 1000;
-        $rank = 32;
         $period = 1;
 
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 64; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.csi";
     }
     #############
     ## RON
@@ -371,20 +336,29 @@ sub get_trace_property {
         $height = 12;
 
         $group_size = 494;
-        $rank = 8;
         $period = 1;
 
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 16; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.ron";
     }
     #############
     ## RSSI - telos
     elsif($file_name eq "tm_telos_rssi.txt") {
-        $num_frames = 1000;
+        $num_frames = 500;
         $width = 16;
         $height = 1;
 
-        $group_size = 1000;
-        $rank = 8;
+        $group_size = 500;
         $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 12; }
+        # else { $rank = 12; }
+        $rank = 8;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.telos";
     }
     #############
     ## RSSI - multi location
@@ -394,9 +368,61 @@ sub get_trace_property {
         $height = 1;
 
         $group_size = 500;
-        $rank = 32;
         $period = 1;
 
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 32; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.multi";
+    }
+    #############
+    ## Channel CSI
+    elsif($file_name eq "static_trace13.ant1.mag.txt") {
+        $num_frames = 500;
+        $width = 270;
+        $height = 1;
+
+        $group_size = 500;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 32; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
+    #############
+    ## UCSB Meshnet
+    elsif($file_name eq "tm_ucsb_meshnet.connected.txt") {
+        $num_frames = 1000;
+        $width = 425;
+        $height = 1;
+
+        $group_size = 1000;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 32; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
+    #############
+    ## UMich RSS
+    elsif($file_name eq "tm_umich_rss.txt") {
+        $num_frames = 1000;
+        $width = 182;
+        $height = 1;
+
+        $group_size = 1000;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 32; }
+        $rank = 32;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
     }
     else {
         die "no such file: $file_name\n";
@@ -404,3 +430,4 @@ sub get_trace_property {
 
     return ($num_frames, $width, $height, $group_size, $rank, $period);
 }
+

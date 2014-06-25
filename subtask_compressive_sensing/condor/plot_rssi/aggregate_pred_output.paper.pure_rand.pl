@@ -15,6 +15,7 @@
 use strict;
 
 use lib "/u/yichao/anomaly_compression/utils";
+use List::Util qw(first max maxstr min minstr reduce shuffle sum);
 use MyUtil;
 
 #############
@@ -101,24 +102,23 @@ my $burst_size;
 # @files = ("128.83.158.127_file.dat0_matrix.mat.txt");
 # @files = ("128.83.158.50_file.dat0_matrix.mat.txt");
 # @files = ("Mob-Recv1run1.dat0_matrix.mat_dB.txt");
-# @files = ("Mob-Recv1run1.dat1_matrix.mat_dB.txt");
 # @files = ("tm_ron1.latency.");
 # @files = ("tm_telos_rssi.txt");
-@files = ("tm_multi_loc_rssi.txt");
+# @files = ("tm_multi_loc_rssi.txt");
+# @files = ("static_trace13.ant1.mag.txt");
+# @files = ("tm_ucsb_meshnet.connected.txt");
+# @files = ("tm_umich_rss.txt");
 
-# @files = ("Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt");
-# @files = ("tm_abilene.od.", "tm_totem.", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_ron1.latency.");
-# @files = ("tm_abilene.od.", "tm_totem.");
+@files = ("tm_abilene.od.", "tm_totem.", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_ron1.latency.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "static_trace13.ant1.mag.txt", "tm_ucsb_meshnet.connected.txt", "tm_umich_rss.txt");
 
 
-@seeds = (1 .. 1);
+@seeds = (1 .. 10);
+@opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens3");
 @opt_swap_mats = ("org");
-@opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens_st", "lens_st_knn2", "srmf_lens_st_knn");
 @opt_dims = ("2d");
 
 @num_anomalies = (0.05);
-@sigma_mags = (0);
-# @sigma_mags = (2);
+@sigma_mags = (1);
 @sigma_noises = (0);
 @threshs = (-1);
 
@@ -130,356 +130,72 @@ $burst_size = 1;
 
 for my $file_name (@files) {    
     
-    #############
-    ## WiFi
-    if($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") {
-        $num_frames = 100;
-        $width = 50;
-        $height = 1;
-
-        @group_sizes = (100);
-        # @ranks = (16);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.wifi";
-    }
-    ###############
-    ## 3G
-    # elsif($file_name eq "tm_3g_region_all.res0.006.bin10.sub.") {
-    #     $num_frames = 100;
-    #     $width = 21;
-    #     $height = 26;
-
-    #     @group_sizes = (100);
-    #     @ranks = (100);
-    #     @periods = (1);
-
-    #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    # }
-    # elsif($file_name eq "tm_3g.cell.bs.bs0.all.bin10.txt") {
-    #     $num_frames = 100;
-    #     $width = 1074;
-    #     $height = 1;
-
-    #     @group_sizes = (100);
-    #     @ranks = (64);
-    #     @periods = (1);
-
-    #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    # }
-    # elsif($file_name eq "tm_3g.cell.bs.bs1.all.bin10.txt") {
-    #     $num_frames = 100;
-    #     $width = 458;
-    #     $height = 1;
-
-    #     @group_sizes = (100);
-    #     @ranks = (64);
-    #     @periods = (1);
-
-    #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    # }
-    elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt") {
-        # $num_frames = 100;
-        $num_frames = 144;
-        $width = 472;
-        $height = 1;
-
-        # @group_sizes = (100);
-        @group_sizes = (144);
-        @ranks = (64);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    }
-    # elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin60.txt") {
-    #     $num_frames = 24;
-    #     $width = 472;
-    #     $height = 1;
-
-    #     @group_sizes = (24);
-    #     @ranks = (8);
-    #     @periods = (1);
-
-    #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    # }
-    # elsif($file_name eq "tm_3g.cell.bs.bs6.all.bin10.txt") {
-    #     $num_frames = 100;
-    #     $width = 240;
-    #     $height = 1;
-
-    #     @group_sizes = (100);
-    #     @ranks = (64);
-    #     @periods = (1);
-
-    #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    # }
-    # elsif($file_name eq "tm_3g.cell.load.top200.all.bin10.txt") {
-    #     $num_frames = 100;
-    #     $width = 200;
-    #     $height = 1;
-
-    #     @group_sizes = (100);
-    #     @ranks = (64);
-    #     @periods = (1);
-
-    #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    # }
-    # elsif($file_name eq "tm_3g.cell.rnc.all.bin10.txt") {
-    #     # $num_frames = 100;
-    #     $num_frames = 144;
-    #     $width = 13;
-    #     $height = 1;
-
-    #     # @group_sizes = (100);
-    #     @group_sizes = (144);
-    #     @ranks = (8);
-    #     @periods = (1);
-
-    #     $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
-    # }
-    #############
-    ## GEANT
-    elsif($file_name eq "tm_totem.") {
-        # $num_frames = 100;
-        $num_frames = 672;
-        $width = 23;
-        $height = 23;
-
-        # @group_sizes = (100);
-        @group_sizes = (672);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.geant";
-    }
-    #############
-    ## Abilene
-    elsif($file_name eq "X") {
-        $num_frames = 1008;
-        $width = 121;
-        $height = 1;
-
-        @group_sizes = (1008);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.abilene";
-    }
-    elsif($file_name eq "tm_abilene.od.") {
-        # $num_frames = 100;
-        $num_frames = 1008;
-        $width = 11;
-        $height = 11;
-
-        # @group_sizes = (100);
-        @group_sizes = (1008);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.abilene";
-    }
-    #############
-    ## CSI
-    elsif($file_name eq "128.83.158.127_file.dat0_matrix.mat.txt") {
-        $num_frames = 1000;
-        $width = 90;
-        $height = 1;
-
-        @group_sizes = (1000);
-        @ranks = (32);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.csi";
-    }
-    elsif($file_name eq "128.83.158.50_file.dat0_matrix.mat.txt") {
-        $num_frames = 2000;
-        $width = 90;
-        $height = 1;
-
-        @group_sizes = (2000);
-        @ranks = (32);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.csi";
-    }
-    elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt") {
-        $num_frames = 1000;
-        $width = 90;
-        $height = 1;
-
-        @group_sizes = (1000);
-        @ranks = (32);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.csi";
-    }
-    elsif($file_name eq "Mob-Recv1run1.dat1_matrix.mat_dB.txt") {
-        $num_frames = 1000;
-        $width = 90;
-        $height = 1;
-
-        @group_sizes = (1000);
-        @ranks = (32);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.csi";
-    }
-    #############
-    ## Sensor
-    elsif($file_name eq "tm_sensor.temp.bin600.txt") {
-        # $num_frames = 100;
-        $num_frames = 144;
-        $width = 54;
-        $height = 1;
-
-        # @group_sizes = (100);
-        @group_sizes = (144);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.sensor";
-    }
-    elsif($file_name eq "tm_sensor.light.bin600.txt") {
-        # $num_frames = 100;
-        $num_frames = 144;
-        $width = 54;
-        $height = 1;
-
-        # @group_sizes = (100);
-        @group_sizes = (144);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.sensor";
-    }
-    elsif($file_name eq "tm_sensor.humidity.bin600.txt") {
-        # $num_frames = 100;
-        $num_frames = 144;
-        $width = 54;
-        $height = 1;
-
-        # @group_sizes = (100);
-        @group_sizes = (144);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.sensor";
-    }
-    elsif($file_name eq "tm_sensor.voltage.bin600.txt") {
-        # $num_frames = 100;
-        $num_frames = 144;
-        $width = 54;
-        $height = 1;
-
-        # @group_sizes = (100);
-        @group_sizes = (144);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.sensor";
-    }
-    #############
-    ## RON
-    elsif($file_name eq "tm_ron1.latency.") {
-        $num_frames = 494;
-        $width = 12;
-        $height = 12;
-
-        @group_sizes = (494);
-        @ranks = (8);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.ron";
-    }
-    #############
-    ## RSSI - telos
-    elsif($file_name eq "tm_telos_rssi.txt") {
-        $num_frames = 500;
-        $width = 16;
-        $height = 1;
-
-        @group_sizes = (500);
-        @ranks = (4);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.telos";
-    }
-    #############
-    ## RSSI - multi location
-    elsif($file_name eq "tm_multi_loc_rssi.txt") {
-        $num_frames = 500;
-        $width = 895;
-        $height = 1;
-
-        @group_sizes = (500);
-        @ranks = (16, 32, 64);
-        @periods = (1);
-
-        $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.multi";
-    }
-    else {
-        die "no such file: $file_name\n";
-    }
-
-
-    # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.std";
+    # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
     $input_dir  = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/output";
 
+    
+    for my $opt_swap_mat (@opt_swap_mats) {
+        for my $opt_dim (@opt_dims) {
 
-    for my $group_size (@group_sizes) {
-        for my $rank (@ranks) {
-            for my $period (@periods) {
-                for my $opt_swap_mat (@opt_swap_mats) {
-                    for my $opt_dim (@opt_dims) {
+            $drop_ele_mode;
+            $drop_mode;
+            $elem_frac;
+            $burst_size;
+            
+            for my $num_anomaly (@num_anomalies) {
+                for my $sigma_mag (@sigma_mags) {
+                    for my $sigma_noise (@sigma_noises) {
+                        for my $thresh (@threshs) {
 
-                        $drop_ele_mode;
-                        $drop_mode;
-                        $elem_frac;
-                        $burst_size;
-                        
-                        for my $num_anomaly (@num_anomalies) {
-                            for my $sigma_mag (@sigma_mags) {
-                                for my $sigma_noise (@sigma_noises) {
-                                    for my $thresh (@threshs) {
+                            plot_pure_rand($func, $file_name, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, \@opt_types);
 
-                                        plot_pure_rand($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, \@opt_types);
-
-                                    }
-                                }
+                            if($sigma_mag > 0) {
+                                my @tmp = ("srmf", "srmf_knn", "lens3");
+                                plot_pure_rand_pr($func, $file_name, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, \@tmp);
                             }
                         }
-                        
                     }
                 }
             }
+            
         }
     }
+
 }
 
 
+######################
+## another anomaly detection plot
+######################
+my @files = ("tm_3g.cell.bs.bs3.all.bin10.txt", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_abilene.od.", "tm_totem.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "static_trace13.ant1.mag.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "tm_umich_rss.txt", "tm_ucsb_meshnet.connected.txt");
+my @loss_rates = (0.1, 0.2, 0.4, 0.8, 0.9, 0.95);
+foreach my $loss_rate (@loss_rates) {
+    plot_pred_bar_f1($loss_rate, \@files);
+}
 
 1;
 
 sub plot_pure_rand {
-    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, $opt_types_ref) = @_;
+    my ($func, $file_name, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, $opt_types_ref) = @_;
 
     my $DEBUG0 = 0;
     my $DEBUG1 = 1;
     my $DEBUG4 = 0;  ## missing files
     my $DEBUG5 = 0;  ## get results
 
+    my $PLOT_LR = 0.4;
+
 
     my @opt_types = @$opt_types_ref;
     # my @loss_rates = (0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.93, 0.95, 0.97, 0.98, 0.99);
-    my @loss_rates = (0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95);
-
+    my @loss_rates = (0.1, 0.2, 0.4, 0.8, 0.9, 0.95);
     
-    my $output_file = "PureRandLoss.$func.$file_name.$num_frames.$width.$height.$group_size.r$rank.period$period.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.burst$burst_size.na$num_anomaly.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
+
+    my $output_file = "PureRandLoss.$func.$file_name.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.burst$burst_size.na$num_anomaly.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
     open FH1, ">$output_dir/pred.$output_file.txt" or die $!;
     open FH2, ">$output_dir/dect.$output_file.txt" or die $!;
     
-
+    
     foreach my $lri (0 .. @loss_rates-1) {
         my $loss_rate = $loss_rates[$lri];
 
@@ -490,6 +206,9 @@ sub plot_pure_rand {
             foreach my $ti (0 .. @opt_types-1) {
                 my $opt_type = $opt_types[$ti];
 
+                my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
+
                 my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
                 print FH1 ", ".$rets{METRIC}{0}{AVG};
             }
@@ -498,8 +217,23 @@ sub plot_pure_rand {
             foreach my $ti (0 .. @opt_types-1) {
                 my $opt_type = $opt_types[$ti];
 
+                my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
+
                 my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
                 print FH1 ", ".$rets{METRIC}{1}{AVG};
+            }
+            # print FH1 "\n";
+
+            ## Gamma
+            foreach my $ti (0 .. @opt_types-1) {
+                my $opt_type = $opt_types[$ti];
+                next if($opt_type ne "lens3");
+
+                my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
+                my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+                print FH1 ", ".$rets{METRIC}{12}{AVG};
             }
             print FH1 "\n";
         }
@@ -513,6 +247,8 @@ sub plot_pure_rand {
         foreach my $ti (0 .. @opt_types-1) {
             my $opt_type = $opt_types[$ti];
 
+            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
             my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
             print FH2 ", ".$rets{METRIC}{8}{AVG};
         }
@@ -520,6 +256,8 @@ sub plot_pure_rand {
         ## recall
         foreach my $ti (0 .. @opt_types-1) {
             my $opt_type = $opt_types[$ti];
+
+            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
 
             my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
             print FH2 ", ".$rets{METRIC}{9}{AVG};
@@ -529,13 +267,18 @@ sub plot_pure_rand {
         foreach my $ti (0 .. @opt_types-1) {
             my $opt_type = $opt_types[$ti];
 
+            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
             my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
             print FH2 ", ".$rets{METRIC}{10}{AVG};
+
         }
 
         ## jaccard
         foreach my $ti (0 .. @opt_types-1) {
             my $opt_type = $opt_types[$ti];
+
+            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
 
             my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
             print FH2 ", ".$rets{METRIC}{11}{AVG};
@@ -545,10 +288,13 @@ sub plot_pure_rand {
         foreach my $ti (0 .. @opt_types-1) {
             my $opt_type = $opt_types[$ti];
 
+            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
             my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-            print FH2 ", ".$rets{METRIC}{12}{AVG};
+            print FH2 ", ".$rets{METRIC}{13}{AVG};
         }
         print FH2 "\n";
+
     }
 
     close FH1;
@@ -617,30 +363,95 @@ sub plot_pure_rand {
 
 
 
+sub plot_pure_rand_pr {
+    my ($func, $file_name, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, $opt_types_ref) = @_;
+
+    my $DEBUG0 = 0;
+    my $DEBUG1 = 1;
+    my $DEBUG4 = 0;  ## missing files
+    my $DEBUG5 = 0;  ## get results
+
+
+    my @opt_types = @$opt_types_ref;
+    my @loss_rates = (0.1, 0.2, 0.4, 0.8, 0.9, 0.95);
+    
+
+    my $output_file = "PureRandLoss.$func.$file_name.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.burst$burst_size.na$num_anomaly.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
+    
+
+    foreach my $lri (0 .. @loss_rates-1) {
+        my $loss_rate = $loss_rates[$lri];
+
+        next if($loss_rate > 0.8);
+
+        
+        my $cmd = "sed 's/FILE_NAME/pr.$output_file.lr$loss_rate/g; s/FIG_NAME/pr.$output_file.lr$loss_rate/g; s/X_RANGE_S/0/g; s/X_RANGE_E/1/g; s/Y_RANGE_E/1/g; s/X_LABEL/Precision/g; s/Y_LABEL/Recall/g; ' plot.pr.mother.plot > tmp.plot.pr.plot";
+        `$cmd`;
+        open FH_P, ">> tmp.plot.pr.plot" or die $!;
+
+        foreach my $ti (0 .. @opt_types-1) {
+            my $opt_type = $opt_types[$ti];
+            my $scheme_name = get_scheme_name($opt_type);
+
+            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
+            open FHO, ">$output_dir/pr.$output_file.lr$loss_rate.$opt_type.txt" or die $!;
+
+            my %rets = get_pr_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, 1);
+            
+            
+            foreach my $lr (sort {$a <=> $b} (keys %rets)) {
+                print FHO " ".$rets{$lr}{PREC}.", ".$rets{$lr}{RECALL}."\n";
+            }
+
+            close FHO;
+
+            
+            print FH_P "data_dir.file_name.\".$opt_type.txt\" using 1:2 with linespoints ls ".($ti%$NUM_CURVE+1)." title '{/Helvetica=28 $scheme_name}'";
+            print FH_P ",\\" if($ti < @opt_types-1);
+            print FH_P "\n";
+        }
+
+        close FH_P;
+
+
+        $cmd = "gnuplot tmp.plot.pr.plot";
+        `$cmd`;
+    }
+
+}
+
+
 sub get_y_max {
     my ($drop_mode, $sigma_mag, $file_name) = @_;
     my $y_max = 1.2;
 
     if($drop_mode eq "PureRandLoss") {
         if($sigma_mag == 0) {
-            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 0.5; }
-            elsif($file_name eq "tm_totem.")                                 { $y_max = 0.7; }
-            elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 1.5; }
-            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 1.4; }
-            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.15; }
-            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 0.3; }
-            elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.04; }
-            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 0.8; }
+            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 0.4; }
+            elsif($file_name eq "tm_totem.")                                 { $y_max = 0.5; }
+            elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 1.4; }
+            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 1.2; }
+            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.12; }
+            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 0.25; }
+            elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.035; }
+            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 0.6; }
+            elsif($file_name eq "tm_ucsb_meshnet.connected.txt")             { $y_max = 0.9; }
+            elsif($file_name eq "tm_umich_rss.txt")                          { $y_max = 0.07; }
+            elsif($file_name eq "static_trace13.ant1.mag.txt")               { $y_max = 0.4; }
         }
-        elsif($sigma_mag == 3) {
-            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 0.6; }
-            elsif($file_name eq "tm_totem.")                                 { $y_max = 0.8; }
+        elsif($sigma_mag == 1) {
+            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 1.0; }
+            elsif($file_name eq "tm_totem.")                                 { $y_max = 2.0; }
             elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 1.5; }
-            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 1.4; }
-            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.25; }
-            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 0.3; }
-            elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.2; }
-            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 1.0; }
+            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 2.2; }
+            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.2; }
+            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 0.8; }
+            elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.14; }
+            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 0.7; }
+            elsif($file_name eq "tm_ucsb_meshnet.connected.txt")             { $y_max = 3.0; }
+            elsif($file_name eq "tm_umich_rss.txt")                          { $y_max = 0.1; }
+            elsif($file_name eq "static_trace13.ant1.mag.txt")               { $y_max = 0.5; }
         }
         else {
             if   ($file_name eq "tm_abilene.od.")                            { $y_max = 1.3; }
@@ -723,6 +534,7 @@ sub get_results {
     for my $mi (0 .. $num_ret-1) {
         if(exists $rets{METRIC}{$mi}{VAL}) {
             $rets{METRIC}{$mi}{AVG} = MyUtil::median(\@{ $rets{METRIC}{$mi}{VAL} });
+            # $rets{METRIC}{$mi}{AVG} = MyUtil::average(\@{ $rets{METRIC}{$mi}{VAL} });
 
         }
         else {
@@ -732,6 +544,295 @@ sub get_results {
 
     return %rets;
 
+}
+
+sub get_pr_results {
+    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, $seed) = @_;
+
+    my $input_dir = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/pr";
+    my $this_file_name = "$input_dir/$file_name.$num_frames.$width.$height.$group_size.r$rank.period$period.$opt_swap_mat.$opt_type.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.loss$loss_rate.burst$burst_size.na$num_anomaly.anom$sigma_mag.noise$sigma_noise.thresh$thresh.seed$seed.txt";
+
+    my $prev_pr = -1;
+    my %ret;
+
+    open FH, "$this_file_name" or die "\n$this_file_name\n".$!;
+    while (<FH>) {
+        chomp;
+        my ($lr, $pr, $rc) = split(/,/, $_);
+        
+        if($pr eq "NaN") { $pr = 0; }
+        else { $pr += 0; }
+
+        if($rc eq "NaN") { $rc = 0; }
+        else { $rc += 0; }
+
+        last if($pr < $prev_pr);
+
+
+        $prev_pr = $pr;
+
+        $ret{$lr}{PREC} = $pr;
+        $ret{$lr}{RECALL} = $rc;
+    }
+    close FH;
+
+    return %ret;
+}
+
+sub get_trace_param {
+    my ($file_name, $opt_type) = @_;
+
+    my ($num_frames, $width, $height, $group_size, $rank, $period);
+
+    #############
+    ## WiFi
+    if($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") {
+        $num_frames = 100;
+        $width = 50;
+        $height = 1;
+
+        $group_size = 100;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 32; }
+        $rank = 8;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.wifi";
+    }
+    ###############
+    ## 3G
+    elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt") {
+        # $num_frames = 100;
+        $num_frames = 144;
+        $width = 472;
+        $height = 1;
+
+        $group_size = 144;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 16; }
+        $rank = 32;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.3g";
+    }
+    #############
+    ## GEANT
+    elsif($file_name eq "tm_totem.") {
+        # $num_frames = 100;
+        $num_frames = 672;
+        $width = 23;
+        $height = 23;
+
+        # $group_size = 100;
+        $group_size = 672;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 16; }
+        $rank = 25;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.geant";
+    }
+    #############
+    ## Abilene
+    elsif($file_name eq "tm_abilene.od.") {
+        # $num_frames = 100;
+        $num_frames = 1008;
+        $width = 11;
+        $height = 11;
+
+        # $group_size = 100;
+        $group_size = 1008;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 64; }
+        $rank = 20;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.abilene";
+    }
+    #############
+    ## CSI
+    elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt") {
+        $num_frames = 1000;
+        $width = 90;
+        $height = 1;
+
+        $group_size = 1000;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 64; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.csi";
+    }
+    #############
+    ## RON
+    elsif($file_name eq "tm_ron1.latency.") {
+        $num_frames = 494;
+        $width = 12;
+        $height = 12;
+
+        $group_size = 494;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 16; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.ron";
+    }
+    #############
+    ## RSSI - telos
+    elsif($file_name eq "tm_telos_rssi.txt") {
+        $num_frames = 500;
+        $width = 16;
+        $height = 1;
+
+        $group_size = 500;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 12; }
+        # else { $rank = 12; }
+        $rank = 8;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.telos";
+    }
+    #############
+    ## RSSI - multi location
+    elsif($file_name eq "tm_multi_loc_rssi.txt") {
+        $num_frames = 500;
+        $width = 895;
+        $height = 1;
+
+        $group_size = 500;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 32; }
+        # else { $rank = 32; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output.rssi.multi";
+    }
+    #############
+    ## Channel CSI
+    elsif($file_name eq "static_trace13.ant1.mag.txt") {
+        $num_frames = 500;
+        $width = 270;
+        $height = 1;
+
+        $group_size = 500;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 32; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
+    #############
+    ## UCSB Meshnet
+    elsif($file_name eq "tm_ucsb_meshnet.connected.txt") {
+        $num_frames = 1000;
+        $width = 425;
+        $height = 1;
+
+        $group_size = 1000;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 32; }
+        $rank = 16;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
+    #############
+    ## UMich RSS
+    elsif($file_name eq "tm_umich_rss.txt") {
+        $num_frames = 1000;
+        $width = 182;
+        $height = 1;
+
+        $group_size = 1000;
+        $period = 1;
+
+        # if($opt_type eq "lens3") { $rank = 64; }
+        # else { $rank = 32; }
+        $rank = 32;
+
+        # $input_dir  = "/u/yichao/anomaly_compression/processed_data/subtask_compressive_sensing/condor/output";
+    }
+    else {
+        die "no such file: $file_name\n";
+    }
+
+    return ($num_frames, $width, $height, $group_size, $rank, $period);
+}
+
+
+sub plot_pred_bar_f1 {
+    my ($loss_rate, $ref_files) = @_;
+    my @files = @$ref_files;
+
+    my $seeds = 1;
+    my @opt_types = ("srmf_knn", "lens3");
+    my $opt_swap_mat = "org";
+    my $opt_dim = "2d";
+
+    my $num_anomaly = 0.05;
+    my $sigma_mag = 1;
+    my $sigma_noise = 0;
+    my $thresh = -1;
+
+    my $drop_ele_mode = "elem";
+    my $drop_mode = "ind";
+    my $elem_frac = 1;
+    my $burst_size = 1;
+
+    my $output_file = "PureRandLoss.$func.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.burst$burst_size.na$num_anomaly.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
+
+    my $cmd = "sed 's/FILE_NAME/dect.bar.$output_file.lr$loss_rate/g; s/FIG_NAME/dect.bar.$output_file.lr$loss_rate/g; s/X_RANGE_S//g; s/X_RANGE_E//g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/1/g; s/X_LABEL//g; s/Y_LABEL/F1-Score/g; ' plot.dect.bar.mother.plot > tmp.plot.dect.bar.plot";
+    `$cmd`;
+    open FH_P, ">> tmp.plot.dect.bar.plot" or die $!;
+
+    open FH3, ">$output_dir/dect.bar.$output_file.lr$loss_rate.txt" or die $!;
+
+    my $first = 1;
+    for my $file_name (@files) {  
+        my $trace_name = get_trace_name($file_name);
+        print FH3 "\"$trace_name\"";
+
+        foreach my $ti (0 .. @opt_types-1) {
+            my $opt_type = $opt_types[$ti];
+            my $scheme_name = get_scheme_name($opt_type);
+
+            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
+
+            my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+            print FH3 "\t".$rets{METRIC}{10}{AVG};
+
+
+            if($first == 1) {
+                my $this_col = 2 + $ti;
+                
+                print FH_P "'' " if($ti > 0);
+                print FH_P "using $this_col:xtic(1) t '{/Helvetica=28 $scheme_name}' fs pattern ".($ti+2)." ls ".($ti%$NUM_CURVE+1);
+                print FH_P ",\\" if($ti < @opt_types-1);
+                print FH_P "\n";
+            }
+        }
+
+        $first = 0;
+        print FH3 "\n";
+    }
+    close FH3;
+    close FH_P;
+
+    $cmd = "gnuplot tmp.plot.dect.bar.plot";
+    `$cmd`;
 }
 
 sub get_scheme_name {
@@ -779,6 +880,15 @@ sub get_scheme_name {
     elsif($opt_types eq "lens_no_st") {
         return "LENS No ST";
     }
+    elsif($opt_types eq "lens3") {
+        return "LENS";
+    }
+    elsif($opt_types eq "lens3_knn") {
+        return "LENS+KNN";
+    }
+    elsif($opt_types eq "srmf_lens3_knn") {
+        return "LENS+SRMF+KNN";
+    }
     elsif($opt_types eq "svd") {
         return "SVD";
     }
@@ -799,3 +909,49 @@ sub get_scheme_name {
     }
 }
 
+
+
+sub get_trace_name {
+    my ($file_name) = @_;
+
+    if($file_name eq "tm_abilene.od.") {
+        return "Abilene";
+    }
+    elsif($file_name eq "tm_totem.") {
+        return "GEANT";
+    }
+    elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") {
+        return "WiFi";
+    }
+    elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt") {
+        return "3G";
+    }
+    elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt") {
+        return "1-ch CSI";
+    }
+    elsif($file_name eq "static_trace13.ant1.mag.txt") {
+        return "Multi-ch CSI";
+    }
+    elsif($file_name eq "tm_multi_loc_rssi.txt") {
+        return "CU RSSI";
+    }
+    elsif($file_name eq "tm_telos_rssi.txt") {
+        return "Cister RSSI";
+    }
+    elsif($file_name eq "tm_ucsb_meshnet.connected.txt") {
+        return "UCSB Meshnet";
+    }
+    elsif($file_name eq "tm_ucsb_meshnet.") {
+        return "UCSB Meshnet";
+    }
+    elsif($file_name eq "tm_umich_rss.txt") {
+        return "UMich RSS";
+    }
+    elsif($file_name eq "tm_ron1.latency.") {
+        return "Delay";
+    }
+    else {
+        return "Unknown";
+    }
+
+}

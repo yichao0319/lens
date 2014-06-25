@@ -68,6 +68,8 @@ if(@ARGV != 0) {
 #############
 my $func = "srmf_based_pred";
 
+my $plot_file;
+
 my $num_frames;
 my $width;
 my $height;
@@ -85,45 +87,48 @@ my @threshs;
 my @files;
 my $drop_ele_mode;
 my $drop_mode;
-my @elem_fracs;
 my $elem_frac;
 my @loss_rates;
 my $burst_size;
 
 
-
-# @files = ("tm_abilene.od.");
-# @files = ("tm_totem.");
-# @files = ("tm_3g.cell.bs.bs3.all.bin10.txt");
-# @files = ("tm_3g.cell.rnc.all.bin10.txt");
-# @files = ("tm_3g.cell.load.top200.all.bin10.txt");
+@files = ("tm_abilene.od.");
 # @files = ("tm_sjtu_wifi.ap_load.all.bin600.top50.txt");
-# @files = ("128.83.158.127_file.dat0_matrix.mat.txt");
-# @files = ("128.83.158.50_file.dat0_matrix.mat.txt");
-# @files = ("Mob-Recv1run1.dat0_matrix.mat_dB.txt");
-# @files = ("Mob-Recv1run1.dat1_matrix.mat_dB.txt");
-# @files = ("tm_ron1.latency.");
-# @files = ("tm_telos_rssi.txt");
-# @files = ("tm_multi_loc_rssi.txt");
-# @files = ("tm_ucsb_meshnet.connected.txt");
-
-@files = ("tm_abilene.od.", "tm_totem.", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_ron1.latency.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "static_trace13.ant1.mag.txt", "tm_ucsb_meshnet.connected.txt", "tm_umich_rss.txt");
+# @files = ("tm_abilene.od.", "tm_totem.", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_3g.cell.bs.bs3.all.bin10.txt", "tm_ron1.latency.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "static_trace13.ant1.mag.txt", "tm_ucsb_meshnet.connected.txt", "tm_umich_rss.txt");
 
 
 @seeds = (1 .. 1);
 @opt_swap_mats = ("org");
 @opt_dims = ("2d");
-@opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens3");
 
-@num_anomalies = (0.05);
-@sigma_mags = (1);
-@sigma_noises = (0);
+@num_anomalies = (0);
+@sigma_mags = (0);
 @threshs = (-1);
 
-$drop_ele_mode = "elem";
-$drop_mode = "ind";
-@elem_fracs = (0.5);
-$burst_size = 1;
+
+my $is_interpolation = 1;
+
+if($is_interpolation) {
+    ## Interpolation
+    @opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens3");
+    $drop_ele_mode = "elem";
+    $drop_mode = "ind";         ## Interpolation
+    $elem_frac = 1;
+    @loss_rates = (0.5);        ## Interpolation
+    $burst_size = 1;
+    $plot_file = "plot.pred.mother.plot";
+}
+else {
+    ## Prediction
+    @opt_types = ("base", "srmf", "lens3");  
+    $drop_ele_mode = "elem";
+    $drop_mode = "half";      ## Prediction
+    $elem_frac = 1;
+    @loss_rates = (0.01);      ## Prediction
+    $burst_size = 1;
+    $plot_file = "plot.pred2.mother.plot";
+}
+
 
 
 for my $file_name (@files) {    
@@ -139,7 +144,6 @@ for my $file_name (@files) {
 
     print $file_name."\n";
 
-
     for my $group_size (@group_sizes) {
         for my $rank (@ranks) {
             for my $period (@periods) {
@@ -148,17 +152,18 @@ for my $file_name (@files) {
 
                         $drop_ele_mode;
                         $drop_mode;
+                        $elem_frac;
                         $burst_size;
-                        for my $elem_frac (@elem_fracs) {
+                        for my $loss_rate (@loss_rates) {
                         
                             for my $num_anomaly (@num_anomalies) {
                                 for my $sigma_mag (@sigma_mags) {
-                                    for my $sigma_noise (@sigma_noises) {
-                                        for my $thresh (@threshs) {
+                                    for my $thresh (@threshs) {
 
-                                            plot_elem_rand($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, \@opt_types);
+                                        # print $file_name."\n";
+                            
+                                        plot_noise_size($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $thresh, \@opt_types);
 
-                                        }
                                     }
                                 }
                             }
@@ -176,8 +181,8 @@ for my $file_name (@files) {
 
 1;
 
-sub plot_elem_rand {
-    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, $opt_types_ref) = @_;
+sub plot_noise_size {
+    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $thresh, $opt_types_ref) = @_;
 
     my $DEBUG0 = 0;
     my $DEBUG1 = 1;
@@ -186,14 +191,15 @@ sub plot_elem_rand {
 
 
     my @opt_types = @$opt_types_ref;
-    # my @loss_rates = (0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.93, 0.95, 0.97, 0.98, 0.99);
-    my @loss_rates = (0.1, 0.2, 0.4, 0.8, 0.9, 0.95);
+    my @sigma_noises = (0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64);
+    # my @sigma_mags = (2);
 
-    
 
-    foreach my $lri (0 .. @loss_rates-1) {
-        my $loss_rate = $loss_rates[$lri];
+    foreach my $ani (0 .. @sigma_noises-1) {
+        my $sigma_noise = $sigma_noises[$ani];
+        # print "size = $sigma_mag\n";
 
+        
         ## MAE
         foreach my $ti (0 .. @opt_types-1) {
             my $opt_type = $opt_types[$ti];
@@ -202,31 +208,60 @@ sub plot_elem_rand {
             
             print ", " if($ti > 0);
             print $rets{METRIC}{1}{AVG};
+
         }
         print "\n";
+
+        ######################################
+
+        # next if($sigma_mag < 0.2);
+
+        # print FH2 $sigma_mag;
+
+        # ## prec
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
+
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{8}{AVG};
+        # }
+
+        # ## recall
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
+
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{9}{AVG};
+        # }
+
+        # ## f1
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
+
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{10}{AVG};
+        # }
+
+        # ## jaccard
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
+
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{11}{AVG};
+        # }
+
+        # ## best thresh
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
+
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{12}{AVG};
+        # }
+        # print FH2 "\n";
     }
 
 }
 
-
-
-sub get_y_max {
-    my ($drop_mode, $file_name) = @_;
-    my $y_max = 1.2;
-
-    if($drop_mode eq "ElemRandLoss") {
-        if   ($file_name eq "tm_abilene.od.")                            { $y_max = 1.6; }
-        elsif($file_name eq "tm_totem.")                                 { $y_max = 2; }
-        elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 1.8; }
-        elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 2.5; }
-        elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.25; }
-        elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 0.7; }
-        elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.255; }
-        elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 0.8; }
-    }
-
-    return $y_max;
-}
 
 
 sub get_results {
@@ -277,7 +312,6 @@ sub get_results {
     for my $mi (0 .. $num_ret-1) {
         if(exists $rets{METRIC}{$mi}{VAL}) {
             $rets{METRIC}{$mi}{AVG} = MyUtil::median(\@{ $rets{METRIC}{$mi}{VAL} });
-
         }
         else {
             $rets{METRIC}{$mi}{AVG} = 0;
@@ -288,67 +322,6 @@ sub get_results {
 
 }
 
-sub get_scheme_name {
-    my ($opt_types) = @_;
-
-    if($opt_types eq "srmf") {
-        return "SRMF";
-    }
-    elsif($opt_types eq "srmf_knn") {
-        return "SRMF+KNN";
-    }
-    elsif($opt_types eq "srmf_knn2") {
-        return "SRMF+KNN";
-    }
-    elsif($opt_types eq "lens") {
-        return "LENS";
-    }
-    elsif($opt_types eq "lens_knn") {
-        return "LENS+KNN";
-    }
-    elsif($opt_types eq "lens_knn2") {
-        return "LENS+KNN";
-    }
-    elsif($opt_types eq "srmf_lens_knn") {
-        return "LENS+SRMF+KNN";
-    }
-    elsif($opt_types eq "srmf_lens_knn2") {
-        return "LENS+SRMF+KNN";
-    }
-    elsif($opt_types eq "lens_st") {
-        return "LENS ST";
-    }
-    elsif($opt_types eq "lens_st_knn") {
-        return "LENS ST+KNN";
-    }
-    elsif($opt_types eq "lens_st_knn2") {
-        return "LENS ST+KNN";
-    }
-    elsif($opt_types eq "srmf_lens_st_knn") {
-        return "LENS ST+SRMF+KNN";
-    }
-    elsif($opt_types eq "lens_no_st") {
-        return "LENS No ST";
-    }
-    elsif($opt_types eq "svd") {
-        return "SVD";
-    }
-    elsif($opt_types eq "svd_base") {
-        return "SVD base";
-    }
-    elsif($opt_types eq "svd_base_knn") {
-        return "SVD base+KNN";
-    }
-    elsif($opt_types eq "knn") {
-        return "KNN";
-    }
-    elsif($opt_types eq "nmf") {
-        return "NMF";
-    }
-    else {
-        return "$opt_types";
-    }
-}
 
 
 sub get_trace_property {

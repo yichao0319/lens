@@ -14,29 +14,38 @@ set xlabel '{/Helvetica=28 X_LABEL}' offset character 0, 0, 0
 set ylabel '{/Helvetica=28 Y_LABEL}' offset character 2.5, 0, 0
 
 set tics font "Helvetica,24"
-set xtics nomirror rotate by 0
+set xtics nomirror rotate by -35
 set ytics nomirror
 # set format x "10^{%L}"
 
-set xrange [0:X_RANGE_E]
-set yrange [0:Y_RANGE_E]
+set xrange [X_RANGE_S:X_RANGE_E]
+set yrange [Y_RANGE_S:Y_RANGE_E]
 
 # set logscale x
 # set logscale y
 
-# set lmargin 4.5
-# set rmargin 5.5
+set lmargin 3
+set rmargin 3
 # set bmargin 3.7
-# set tmargin 4.4
+set tmargin 2
 
-# set key left top
-# set key Left above reverse nobox horizontal spacing 0.9 samplen 1.5 width 0
-set nokey
+set style data histogram
+set style histogram cluster gap 1
+set style fill solid border -1
+set boxwidth 0.9
 
-set style line 1 lc rgb "#e41a1c" lt 1 lw 5 pt 1 ps 3 pi -1  ## +
-set style line 2 lc rgb "black"   lt 8 lw 5 pt 8 ps 3 pi -1  ## triangle
-set style line 3 lc rgb "blue"    lt 6 lw 5 pt 6 ps 3 pi -1  ## circle
-# set pointintervalbox 2  ## interval to a point
+set style fill pattern 2
+# set style fill solid 0.8
+set palette color
+# set palette gray
+
+# set key right top
+set key Left above reverse horizontal spacing 0.9 samplen 1.5 width 2
+# set nokey
+
+
+set style line 1 lc rgb "red"     lt 1 lw 1 pt 1 ps 1.5 pi -1  ## +
+set style line 2 lc rgb "blue"    lt 2 lw 1 pt 2 ps 1.5 pi -1  ## x
 
 # plot data_dir.file_name.".txt" using 1:3 with lines ls 2 title '{/Helvetica=28 TITLE_1}', \
 #      data_dir.file_name.".txt" using 1:2 with lines ls 1 notitle

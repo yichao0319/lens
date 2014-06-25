@@ -18,7 +18,7 @@ set xtics nomirror rotate by 0
 set ytics nomirror
 # set format x "10^{%L}"
 
-set xrange [0:X_RANGE_E]
+set xrange [X_RANGE_S:X_RANGE_E]
 set yrange [0:Y_RANGE_E]
 
 # set logscale x
@@ -29,13 +29,13 @@ set yrange [0:Y_RANGE_E]
 # set bmargin 3.7
 # set tmargin 4.4
 
-# set key left top
+set key left bottom
 # set key Left above reverse nobox horizontal spacing 0.9 samplen 1.5 width 0
-set nokey
+# set nokey
 
-set style line 1 lc rgb "#e41a1c" lt 1 lw 5 pt 1 ps 3 pi -1  ## +
-set style line 2 lc rgb "black"   lt 8 lw 5 pt 8 ps 3 pi -1  ## triangle
-set style line 3 lc rgb "blue"    lt 6 lw 5 pt 6 ps 3 pi -1  ## circle
+set style line 1 lc rgb "black"    lt 8 lw 5 pt 8 ps 3 pi -1  ## triangle
+set style line 2 lc rgb "#732C7B"  lt 7 lw 5 pt 12 ps 3 pi -1 ## dimond  
+set style line 3 lc rgb "blue"     lt 6 lw 5 pt 6 ps 3 pi -1  ## circle
 # set pointintervalbox 2  ## interval to a point
 
 # plot data_dir.file_name.".txt" using 1:3 with lines ls 2 title '{/Helvetica=28 TITLE_1}', \
@@ -45,4 +45,4 @@ set style line 3 lc rgb "blue"    lt 6 lw 5 pt 6 ps 3 pi -1  ## circle
 #     data_dir.file_name.".txt" using 1:6 with linespoints ls 2 title '{/Helvetica=28 LENS+KNN}', \
 #     data_dir.file_name.".txt" using 1:7 with linespoints ls 3 title '{/Helvetica=28 Combined}'
 
-plot data_dir.file_name.".txt" \
+plot \

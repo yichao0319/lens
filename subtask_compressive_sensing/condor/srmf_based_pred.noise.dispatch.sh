@@ -35,25 +35,26 @@ files=("tm_abilene.od." "tm_totem." "tm_sjtu_wifi.ap_load.all.bin600.top50.txt" 
 # files=("tm_3g.cell.bs.bs3.all.bin10.txt" "tm_multi_loc_rssi.txt")
 
 
-seeds=(1 2 3 4 5 6 7 8 9 10)
-# seeds=(1)
+# seeds=(1 2 3 4 5)
+seeds=(1)
 opt_swap_mats=("org")
 opt_types=("srmf_knn" "srmf" "lens3" "svd_base" "svd_base_knn" "base")
-# opt_types=("svd_base" "svd_base_knn")
 # opt_types=("srmf" "lens3" "base")
 opt_dims=("2d")
+threshs=(-1)
 
 ######################
 # sigma_mags=(0 0.1 0.5 1 1.5 2 2.5 3 5)  ## impact of anomaly size: N times stdev
-sigma_mags=(1)                                 ## dropping mode; impact of number of anomalies
+sigma_mags=(0)                                 ## dropping mode; impact of number of anomalies
 ######################
 
-sigma_noises=(0)
-threshs=(-1)
+######################
+sigma_noises=(0 0.01 0.02 0.04 0.08 0.16 0.32 0.64)
+######################
 
 #################
 # num_anomalies=(0 0.01 0.02 0.04 0.08 0.12 0.16 0.2)  # impact of number of anomalies
-num_anomalies=(0.05)                               ## dropping mode; impact of anomaly size
+num_anomalies=(0)                               ## dropping mode; impact of anomaly size
 #################
 
 for filename in ${files[@]}; do
@@ -393,8 +394,9 @@ for filename in ${files[@]}; do
                                                 drop_mode="ind"
                                                 elem_fracs=(1)
                                                 ##############
-                                                loss_rates=(0.1 0.2 0.4 0.8 0.9 0.95)
-                                                # loss_rates=(0.5)
+                                                # loss_rates=(0.05 0.1 0.2 0.4 0.6 0.8 0.9 0.93 0.95 0.97 0.98 0.99)
+                                                # loss_rates=(0.1 0.2 0.4 0.8 0.9 0.95)
+                                                loss_rates=(0.5)
                                                 ##############
                                                 burst_size=1
                                                 for elem_frac in ${elem_fracs[@]}; do

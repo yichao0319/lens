@@ -46,7 +46,6 @@ my $NUM_CURVE = 12;
 my $input_dir  = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/condor/output.internet";
 my $output_dir = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/output";
 my $figure_dir = "/u/yichao/anomaly_compression/condor_data/subtask_compressive_sensing/figures";
-my $gnuplot_mother = "plot.pr";
 
 ## data - TRACE - OPT_DECT - OPT_DELTA - BLOCK_SIZE - THRESH - [TP, TN, FP, TN, ...]
 my %data = ();
@@ -114,8 +113,8 @@ my $burst_size;
 @opt_swap_mats = ("org");
 @opt_dims = ("2d");
 
-@sigma_mags = (1);
-@sigma_noises = (0);
+@num_anomalies = (0);
+@sigma_mags = (0);
 @threshs = (-1);
 
 
@@ -123,7 +122,7 @@ my $is_interpolation = 1;
 
 if($is_interpolation) {
     ## Interpolation
-    @opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens3");
+    @opt_types = ("svd_base", "svd_base_knn", "srmf", "srmf_knn", "lens3"); 
     $drop_ele_mode = "elem";
     $drop_mode = "ind";         ## Interpolation
     $elem_frac = 1;
@@ -138,7 +137,7 @@ else {
     $drop_mode = "half";      ## Prediction
     $elem_frac = 1;
     # @loss_rates = (0.2);      ## Prediction
-    @loss_rates = (0.01);      ## Prediction
+    @loss_rates = (0.05);      ## Prediction
     $burst_size = 1;
     $plot_file = "plot.pred2.mother.plot";
 }
@@ -171,16 +170,14 @@ for my $file_name (@files) {
                         $burst_size;
                         for my $loss_rate (@loss_rates) {
                         
-                            for my $sigma_mag (@sigma_mags) {
-                                for my $sigma_noise (@sigma_noises) {
+                            for my $num_anomaly (@num_anomalies) {
+                                for my $sigma_mag (@sigma_mags) {
                                     for my $thresh (@threshs) {
 
-                                        plot_num_anomaly($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $sigma_mag, $sigma_noise, $thresh, \@opt_types);
+                                        plot_noise_size($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $thresh, \@opt_types);
 
-                                        if($sigma_mag > 0) {
-                                            my @tmp = ("srmf", "srmf_knn", "lens3");
-                                            plot_num_anomaly_pr($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $sigma_mag, $sigma_noise, $thresh, \@tmp);
-                                        }
+                                        # my @tmp = ("srmf", "srmf_knn", "lens3");
+                                        # plot_anomaly_size_pr($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_noise, $thresh, \@tmp);
 
                                     }
                                 }
@@ -196,21 +193,21 @@ for my $file_name (@files) {
 }
 
 
+
 ######################
 ## another anomaly detection plot
 ######################
-my @files = ("tm_3g.cell.bs.bs3.all.bin10.txt", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_abilene.od.", "tm_totem.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "static_trace13.ant1.mag.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "tm_umich_rss.txt", "tm_ucsb_meshnet.connected.txt");
-my @num_anomalies = (0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2);
-foreach my $num_anomaly (@num_anomalies) {
-    plot_pred_bar_f1($num_anomaly, \@files);
-}
-
+# my @files = ("tm_3g.cell.bs.bs3.all.bin10.txt", "tm_sjtu_wifi.ap_load.all.bin600.top50.txt", "tm_abilene.od.", "tm_totem.", "Mob-Recv1run1.dat0_matrix.mat_dB.txt", "static_trace13.ant1.mag.txt", "tm_telos_rssi.txt", "tm_multi_loc_rssi.txt", "tm_umich_rss.txt", "tm_ucsb_meshnet.connected.txt");
+# my @sigma_mags = (0, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 5);
+# foreach my $sigma_mag (@sigma_mags) {
+#     plot_pred_bar_f1($sigma_mag, \@files);
+# }
 
 
 1;
 
-sub plot_num_anomaly {
-    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $sigma_mag, $sigma_noise, $thresh, $opt_types_ref) = @_;
+sub plot_noise_size {
+    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $thresh, $opt_types_ref) = @_;
 
     my $DEBUG0 = 0;
     my $DEBUG1 = 1;
@@ -219,18 +216,18 @@ sub plot_num_anomaly {
 
 
     my @opt_types = @$opt_types_ref;
-    my @num_anomalies = (0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2);
+    my @sigma_noises = (0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64);
 
     
-    my $output_file = "NumAnomaly.$func.$file_name.$num_frames.$width.$height.$group_size.r$rank.period$period.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.lr$loss_rate.burst$burst_size.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
+    my $output_file = "NoiseSize.$func.$file_name.$num_frames.$width.$height.$group_size.r$rank.period$period.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.lr$loss_rate.burst$burst_size.na$num_anomaly.anom$sigma_mag.thresh$thresh";
     open FH1, ">$output_dir/pred.$output_file.txt" or die $!;
-    open FH2, ">$output_dir/dect.$output_file.txt" or die $!;
+    # open FH2, ">$output_dir/dect.$output_file.txt" or die $!;
     
 
-    foreach my $nai (0 .. @num_anomalies-1) {
-        my $num_anomaly = $num_anomalies[$nai];
+    foreach my $ani (0 .. @sigma_noises-1) {
+        my $sigma_noise = $sigma_noises[$ani];
 
-        print FH1 $num_anomaly;
+        print FH1 $sigma_noise;
 
         ## MSE
         foreach my $ti (0 .. @opt_types-1) {
@@ -247,74 +244,63 @@ sub plot_num_anomaly {
             my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
             print FH1 ", ".$rets{METRIC}{1}{AVG};
         }
-        # print FH1 "\n";
-
-        ## Gamma
-        foreach my $ti (0 .. @opt_types-1) {
-            my $opt_type = $opt_types[$ti];
-            next if($opt_type ne "lens3");
-
-            my ($num_frames, $width, $height, $group_size, $rank, $period) = get_trace_param($file_name, $opt_type);
-
-            my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-            print FH1 ", ".$rets{METRIC}{12}{AVG};
-        }
         print FH1 "\n";
 
         ######################################
 
-        next if($num_anomaly < 0.001);
-        print FH2 $num_anomaly;
+        # next if($sigma_mag <= 0.5);
 
-        ## prec
-        foreach my $ti (0 .. @opt_types-1) {
-            my $opt_type = $opt_types[$ti];
+        # print FH2 $sigma_mag;
 
-            my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-            print FH2 ", ".$rets{METRIC}{8}{AVG};
-        }
+        # ## prec
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
 
-        ## recall
-        foreach my $ti (0 .. @opt_types-1) {
-            my $opt_type = $opt_types[$ti];
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{8}{AVG};
+        # }
 
-            my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-            print FH2 ", ".$rets{METRIC}{9}{AVG};
-        }
+        # ## recall
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
 
-        ## f1
-        foreach my $ti (0 .. @opt_types-1) {
-            my $opt_type = $opt_types[$ti];
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{9}{AVG};
+        # }
 
-            my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-            print FH2 ", ".$rets{METRIC}{10}{AVG};
-        }
+        # ## f1
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
 
-        ## jaccard
-        foreach my $ti (0 .. @opt_types-1) {
-            my $opt_type = $opt_types[$ti];
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{10}{AVG};
+        # }
 
-            my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-            print FH2 ", ".$rets{METRIC}{11}{AVG};
-        }
+        # ## jaccard
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
 
-        ## best thresh
-        foreach my $ti (0 .. @opt_types-1) {
-            my $opt_type = $opt_types[$ti];
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{11}{AVG};
+        # }
 
-            my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
-            print FH2 ", ".$rets{METRIC}{13}{AVG};
-        }
-        print FH2 "\n";
+        # ## best thresh
+        # foreach my $ti (0 .. @opt_types-1) {
+        #     my $opt_type = $opt_types[$ti];
+
+        #     my %rets = get_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh);
+        #     print FH2 ", ".$rets{METRIC}{12}{AVG};
+        # }
+        # print FH2 "\n";
     }
 
     close FH1;
-    close FH2;
+    # close FH2;
 
 
     ## plot filling in results
-    my $y_max = get_y_max("NumAnomaly", $drop_mode, $file_name);
-    my $cmd = "sed 's/FILE_NAME/pred.$output_file/g; s/FIG_NAME/pred.$output_file/g; s/X_RANGE_S/0/g; s/X_RANGE_E//g; s/Y_RANGE_E/$y_max/g; s/X_LABEL/Ratio of Anomalies/g; s/Y_LABEL/NMAE/g; ' $plot_file > tmp.plot.pred.plot";
+    my $y_max = get_y_max("NoiseSize", $drop_mode, $file_name);
+    my $cmd = "sed 's/FILE_NAME/pred.$output_file/g; s/FIG_NAME/pred.$output_file/g; s/X_RANGE_S/0/g; s/X_RANGE_E/0.64/g; s/Y_RANGE_E/$y_max/g; s/X_LABEL/Noise Size/g; s/Y_LABEL/NMAE/g; ' $plot_file > tmp.plot.pred.plot";
     `$cmd`;
 
     open FH, ">>tmp.plot.pred.plot" or die $!;
@@ -332,41 +318,41 @@ sub plot_num_anomaly {
     $cmd = "gnuplot tmp.plot.pred.plot";
     `$cmd`;
 
-    if($drop_mode eq "ind") {
-        ## plot detecting results
-        # $cmd = "sed 's/FILE_NAME/dect.$output_file/g; s/FIG_NAME/dect.$output_file/g; ' plot.dect.mother.plot > tmp.plot.dect.plot";
-        # `$cmd`;
+    # if($drop_mode eq "ind") {
+    #     ## plot detecting results
+    #     # $cmd = "sed 's/FILE_NAME/dect.$output_file/g; s/FIG_NAME/dect.$output_file/g; ' plot.dect.mother.plot > tmp.plot.dect.plot";
+    #     # `$cmd`;
 
-        # $cmd = "gnuplot tmp.plot.dect.plot";
-        # `$cmd`;
-        my $cmd = "sed 's/FILE_NAME/dect.$output_file/g; s/FIG_NAME/dect.$output_file/g; s/X_RANGE_S/0/g; s/X_RANGE_E//g; s/Y_RANGE_E/1/g; s/X_LABEL/Ratio of Anomalies/g; s/Y_LABEL/F1-Score/g; ' plot.pred.mother.plot > tmp.plot.dect.plot";
-        `$cmd`;
+    #     # $cmd = "gnuplot tmp.plot.dect.plot";
+    #     # `$cmd`;
+    #     my $cmd = "sed 's/FILE_NAME/dect.$output_file/g; s/FIG_NAME/dect.$output_file/g; s/X_RANGE_S//g; s/X_RANGE_E//g; s/Y_RANGE_E/1/g; s/X_LABEL/Anomaly Size k/g; s/Y_LABEL/F1-Score/g; ' plot.pred.mother.plot > tmp.plot.dect.plot";
+    #     `$cmd`;
 
-        open FH, ">>tmp.plot.dect.plot" or die $!;
-        my $col = 2 + 2*@opt_types;
-        my $lens_st_col;
-        foreach my $oi (0 .. @opt_types-1) {
-            my $opt_type = $opt_types[$oi];
-            my $scheme_name = get_scheme_name($opt_type);
+    #     open FH, ">>tmp.plot.dect.plot" or die $!;
+    #     my $col = 2 + 2*@opt_types;
+    #     my $lens_st_col;
+    #     foreach my $oi (0 .. @opt_types-1) {
+    #         my $opt_type = $opt_types[$oi];
+    #         my $scheme_name = get_scheme_name($opt_type);
 
-            my $this_col = $col+$oi;
-            if($opt_type eq "lens_st") {
-                $lens_st_col = $this_col;
-            }
-            if($opt_type eq "srmf_lens_st_knn") {
-                $this_col = $lens_st_col;
-            }
+    #         my $this_col = $col+$oi;
+    #         if($opt_type eq "lens_st") {
+    #             $lens_st_col = $this_col;
+    #         }
+    #         if($opt_type eq "srmf_lens_st_knn") {
+    #             $this_col = $lens_st_col;
+    #         }
 
-            print FH "\"\" " if($oi > 0);
-            print FH "using 1:$this_col with linespoints ls ".($oi%$NUM_CURVE+1)." title '{/Helvetica=28 $scheme_name}'";
-            print FH ",\\" if($oi < @opt_types-1);
-            print FH "\n";
-        }
-        close FH;
+    #         print FH "\"\" " if($oi > 0);
+    #         print FH "using 1:$this_col with linespoints ls ".($oi%$NUM_CURVE+1)." title '{/Helvetica=28 $scheme_name}'";
+    #         print FH ",\\" if($oi < @opt_types-1);
+    #         print FH "\n";
+    #     }
+    #     close FH;
 
-        $cmd = "gnuplot tmp.plot.dect.plot";
-        `$cmd`;
-    }
+    #     $cmd = "gnuplot tmp.plot.dect.plot";
+    #     `$cmd`;
+    # }
 }
 
 
@@ -375,31 +361,31 @@ sub get_y_max {
     my ($type, $drop_mode, $file_name) = @_;
     my $y_max = 1.2;
 
-    if($type eq "NumAnomaly") {
+    if($type eq "NoiseSize") {
         if($drop_mode eq "ind") {
-            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 1.4; }
-            elsif($file_name eq "tm_totem.")                                 { $y_max = 2.0; }
-            elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 2; }
-            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 3.0; }
-            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.25; }
-            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 1.0; }
-            elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.3; }
-            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 1.2; }
-            elsif($file_name eq "tm_ucsb_meshnet.connected.txt")             { $y_max = 2.0; }
-            elsif($file_name eq "tm_umich_rss.txt")                          { $y_max = 0.15; }
-            elsif($file_name eq "static_trace13.ant1.mag.txt")               { $y_max = 0.55; }
+            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 1.5; }
+            elsif($file_name eq "tm_totem.")                                 { $y_max = 1.4; }
+            elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 1.6; }
+            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 2.0; }
+            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.9; }
+            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 1.8; }
+            elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.8; }
+            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 1.4; }
+            elsif($file_name eq "tm_ucsb_meshnet.connected.txt")             { $y_max = 1.4; }
+            elsif($file_name eq "tm_umich_rss.txt")                          { $y_max = 1.1; }
+            elsif($file_name eq "static_trace13.ant1.mag.txt")               { $y_max = 1.0; }
         }
         else {
-            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 1.0; }
-            elsif($file_name eq "tm_totem.")                                 { $y_max = 1.5; }
-            elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 1.3; }
-            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 1.2; }
-            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 0.3; }
-            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 0.5; }
+            if   ($file_name eq "tm_abilene.od.")                            { $y_max = 1.2; }
+            elsif($file_name eq "tm_totem.")                                 { $y_max = 1.6; }
+            elsif($file_name eq "tm_3g.cell.bs.bs3.all.bin10.txt")           { $y_max = 1.5; }
+            elsif($file_name eq "tm_sjtu_wifi.ap_load.all.bin600.top50.txt") { $y_max = 1.5; }
+            elsif($file_name eq "Mob-Recv1run1.dat0_matrix.mat_dB.txt")      { $y_max = 1.0; }
+            elsif($file_name eq "tm_telos_rssi.txt")                         { $y_max = 0.6; }
             elsif($file_name eq "tm_multi_loc_rssi.txt")                     { $y_max = 0.2; }
-            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 0.8; }
-            elsif($file_name eq "tm_ucsb_meshnet.connected.txt")             { $y_max = 1.7; }
-            elsif($file_name eq "tm_umich_rss.txt")                          { $y_max = 0.13; }
+            elsif($file_name eq "tm_ron1.latency.")                          { $y_max = 0.9; }
+            elsif($file_name eq "tm_ucsb_meshnet.connected.txt")             { $y_max = 1.9; }
+            elsif($file_name eq "tm_umich_rss.txt")                          { $y_max = 0.3; }
             elsif($file_name eq "static_trace13.ant1.mag.txt")               { $y_max = 0.7; }
         }
     }
@@ -539,8 +525,9 @@ sub get_scheme_name {
 }
 
 
-sub plot_num_anomaly_pr {
-    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $sigma_mag, $sigma_noise, $thresh, $opt_types_ref) = @_;
+
+sub plot_anomaly_size_pr {
+    my ($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_noise, $thresh, $opt_types_ref) = @_;
 
     my $DEBUG0 = 0;
     my $DEBUG1 = 1;
@@ -549,17 +536,17 @@ sub plot_num_anomaly_pr {
 
 
     my @opt_types = @$opt_types_ref;
-    my @num_anomalies = (0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2);
+    # my @sigma_mags = (0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1);
+    my @sigma_mags = (0.1, 0.5, 1, 1.5, 2, 2.5, 3, 5);
 
     
-    my $output_file = "NumAnomaly.$func.$file_name.$num_frames.$width.$height.$group_size.r$rank.period$period.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.lr$loss_rate.burst$burst_size.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
-    
+    my $output_file = "NoiseSize.$func.$file_name.$num_frames.$width.$height.$group_size.r$rank.period$period.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.lr$loss_rate.burst$burst_size.na$num_anomaly.noise$sigma_noise.thresh$thresh";
     
 
-    foreach my $nai (0 .. @num_anomalies-1) {
-        my $num_anomaly = $num_anomalies[$nai];
+    foreach my $asi (0 .. @sigma_mags-1) {
+        my $sigma_mag = $sigma_mags[$asi];
 
-        my $cmd = "sed 's/FILE_NAME/pr.$output_file.na$num_anomaly/g; s/FIG_NAME/pr.$output_file.na$num_anomaly/g; s/X_RANGE_S/0/g; s/X_RANGE_E/1/g; s/Y_RANGE_E/1/g; s/X_LABEL/Precision/g; s/Y_LABEL/Recall/g; ' plot.pr.mother.plot > tmp.plot.pr.plot";
+        my $cmd = "sed 's/FILE_NAME/pr.$output_file.anom$sigma_mag/g; s/FIG_NAME/pr.$output_file.anom$sigma_mag/g; s/X_RANGE_S/0/g; s/X_RANGE_E/1/g; s/Y_RANGE_E/1/g; s/X_LABEL/Precision/g; s/Y_LABEL/Recall/g; ' plot.pr.mother.plot > tmp.plot.pr.plot";
         `$cmd`;
         open FH_P, ">> tmp.plot.pr.plot" or die $!;
 
@@ -568,7 +555,7 @@ sub plot_num_anomaly_pr {
             my $opt_type = $opt_types[$ti];
             my $scheme_name = get_scheme_name($opt_type);
 
-            open FHO, ">$output_dir/pr.$output_file.na$num_anomaly.$opt_type.txt" or die $!;
+            open FHO, ">$output_dir/pr.$output_file.anom$sigma_mag.$opt_type.txt" or die $!;
 
             my %rets = get_pr_results($func, $file_name, $num_frames, $width, $height, $group_size, $rank, $period, $opt_swap_mat, $opt_type, $opt_dim, $drop_ele_mode, $drop_mode, $elem_frac, $loss_rate, $burst_size, $num_anomaly, $sigma_mag, $sigma_noise, $thresh, 1);
             
@@ -630,8 +617,10 @@ sub get_pr_results {
 
 
 
+
+
 sub plot_pred_bar_f1 {
-    my ($num_anomaly, $ref_files) = @_;
+    my ($sigma_mag, $ref_files) = @_;
     my @files = @$ref_files;
 
     my $seeds = 1;
@@ -640,7 +629,7 @@ sub plot_pred_bar_f1 {
     my $opt_dim = "2d";
 
     my $loss_rate = 0.5;
-    my $sigma_mag = 1;
+    my $num_anomaly = 0.05;
     my $sigma_noise = 0;
     my $thresh = -1;
 
@@ -649,13 +638,13 @@ sub plot_pred_bar_f1 {
     my $elem_frac = 1;
     my $burst_size = 1;
 
-    my $output_file = "NumAnomaly.$func.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.lr$loss_rate.burst$burst_size.anom$sigma_mag.noise$sigma_noise.thresh$thresh";
-    
-    my $cmd = "sed 's/FILE_NAME/dect.bar.$output_file.na$num_anomaly/g; s/FIG_NAME/dect.bar.$output_file.na$num_anomaly/g; s/X_RANGE_S//g; s/X_RANGE_E//g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/1/g; s/X_LABEL//g; s/Y_LABEL/F1-Score/g; ' plot.dect.bar.mother.plot > tmp.plot.dect.bar.plot";
+    my $output_file = "NoiseSize.$func.$opt_swap_mat.$opt_dim.$drop_ele_mode.$drop_mode.elem$elem_frac.lr$loss_rate.burst$burst_size.na$num_anomaly.noise$sigma_noise.thresh$thresh";
+
+    my $cmd = "sed 's/FILE_NAME/dect.bar.$output_file.anom$sigma_mag/g; s/FIG_NAME/dect.bar.$output_file.anom$sigma_mag/g; s/X_RANGE_S//g; s/X_RANGE_E//g; s/Y_RANGE_S/0/g; s/Y_RANGE_E/1/g; s/X_LABEL//g; s/Y_LABEL/F1-Score/g; ' plot.dect.bar.mother.plot > tmp.plot.dect.bar.plot";
     `$cmd`;
     open FH_P, ">> tmp.plot.dect.bar.plot" or die $!;
 
-    open FH3, ">$output_dir/dect.bar.$output_file.na$num_anomaly.txt" or die $!;
+    open FH3, ">$output_dir/dect.bar.$output_file.anom$sigma_mag.txt" or die $!;
 
     my $first = 1;
     for my $file_name (@files) {  
@@ -930,5 +919,6 @@ sub get_trace_param {
 
     return ($num_frames, $width, $height, $group_size, $rank, $period);
 }
+
 
 
