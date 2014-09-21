@@ -596,7 +596,7 @@ sub plot_time_rand {
 
     ## plot filling in results
     my $y_max = get_y_max("TimeRandLoss", $file_name);
-    my $cmd = "sed 's/FILE_NAME/pred.$output_file/g; s/FIG_NAME/pred.$output_file/g; s/X_RANGE_S/0/g; s/X_RANGE_E//g; s/Y_RANGE_E/$y_max/g; s/X_LABEL/Data Loss Probability/g; s/Y_LABEL/NMAE/g; ' plot.pred.mother.plot > tmp.plot.pred.plot";
+    my $cmd = "sed 's/FILE_NAME/pred.$output_file/g; s/FIG_NAME/pred.$output_file/g; s/X_RANGE_S/0/g; s/X_RANGE_E//g; s/Y_RANGE_E/$y_max/g; s/X_LABEL/p/g; s/Y_LABEL/NMAE/g; ' plot.pred.mother.plot > tmp.plot.pred.plot";
     `$cmd`;
 
     open FH, ">>tmp.plot.pred.plot" or die $!;

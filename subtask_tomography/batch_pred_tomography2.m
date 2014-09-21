@@ -2,7 +2,7 @@
 function batch_pred_tomography()
 
 
-    if(1)
+    if(0)
         fprintf('=====================\nAnomaly Size:\n');
 
         trace_name = 'abilene'
@@ -29,7 +29,7 @@ function batch_pred_tomography()
     
 
 
-    if(0)
+    if(1)
         fprintf('=====================\nNumber of Anomalies\n');
 
         trace_name = 'abilene'

@@ -2,7 +2,7 @@
 
 use strict;
 
-my $RERUN = 1;
+my $RERUN = 0;
 
 my $cmd;
 

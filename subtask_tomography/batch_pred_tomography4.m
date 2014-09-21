@@ -2,10 +2,10 @@
 function batch_pred_tomography()
 
 
-    if(1)
+    if(0)
         fprintf('=====================\nAnomaly Size:\n');
 
-        trace_name = 'abilene'
+        trace_name = 'geant'
         num_anom = 0.05;
         sigma_mags = [0, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 5];
         ret = zeros(8, length(sigma_mags));
@@ -29,10 +29,10 @@ function batch_pred_tomography()
     
 
 
-    if(0)
+    if(1)
         fprintf('=====================\nNumber of Anomalies\n');
 
-        trace_name = 'abilene'
+        trace_name = 'geant'
         num_anoms = [0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.2];
         sigma_mag = 1;
         ret = zeros(3, length(num_anoms));

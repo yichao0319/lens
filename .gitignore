@@ -49,3 +49,7 @@ cvs_repository
 #####
 utils/lens
 c
+lens3.m
+lens3_scaled.m
+*.txt
+*.eps
